@@ -1,0 +1,7 @@
+pyyaml
+pymysql
+peewee
+flask
+ansi2html
+gunicorn
+pytest-flask
