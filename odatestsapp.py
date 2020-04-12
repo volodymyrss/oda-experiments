@@ -6,6 +6,11 @@ import datetime
 import yaml
 import io
 
+
+from flask_jwt import JWT, jwt_required, current_identity
+from werkzeug.security import safe_str_cmp
+
+
 import odakb
 
 import os
@@ -25,6 +30,32 @@ try:
     import urlparse
 except ImportError:
     import urllib.parse as urlparse
+
+
+class User(object):
+    def __init__(self, id, username, password):
+        self.id = id
+        self.username = username
+        self.password = password
+
+    def __str__(self):
+        return "User(id='%s')" % self.id
+
+users = [
+    User(1, 'testbot', os.environ.get("ODATESTS_BOT_PASSWORD")),
+]
+
+username_table = {u.username: u for u in users}
+userid_table = {u.id: u for u in users}
+
+def authenticate(username, password):
+    user = username_table.get(username, None)
+    if user and safe_str_cmp(user.password.encode('utf-8'), password.encode('utf-8')):
+        return user
+
+def identity(payload):
+    user_id = payload['identity']
+    return userid_table.get(user_id, None)
 
 
 import pymysql
@@ -122,6 +153,11 @@ class ReverseProxied(object):
 def create_app():
     app = Flask(__name__)
     app.wsgi_app = ReverseProxied(app.wsgi_app)
+    app.debug = True
+    app.config['SECRET_KEY'] = os.environ.get("ODATESTS_SECRET_KEY")
+    app.config['JWT_DEFAULT_REALM'] = "Login Required"
+
+    jwt = JWT(app, authenticate, identity)
     return app
 
 app = create_app()
@@ -177,13 +213,13 @@ def test_results_get(methods=["GET"]):
         return render_template('task_stats.html', bystate=bystate)
     #return jsonify({k:len(v) for k,v in bystate.items()})
 
-@app.route('/tests')
-def tests_put(methods=["PUT"]):
+@app.route('/tests', methods=["POST"])
+@jwt_required()
+def tests_post():
     try:
         db.connect()
     except peewee.OperationalError as e:
         pass
-
 
     return jsonify({})
 

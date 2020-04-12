@@ -9,3 +9,5 @@ pytest-flask
 keyring
 
 oda-knowledge-base==0.4.8.dev0
+
+Flask-JWT
