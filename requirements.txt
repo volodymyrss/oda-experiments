@@ -5,3 +5,7 @@ flask
 ansi2html
 gunicorn
 pytest-flask
+
+keyring
+
+oda-knowledge-base==0.4.8.dev0
