@@ -155,7 +155,6 @@ def create_app():
     app.wsgi_app = ReverseProxied(app.wsgi_app)
     app.debug = True
     app.config['SECRET_KEY'] = os.environ.get("ODATESTS_SECRET_KEY")
-    app.config['JWT_DEFAULT_REALM'] = "Login Required"
 
     jwt = JWT(app, authenticate, identity)
     return app
