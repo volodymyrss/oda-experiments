@@ -173,7 +173,6 @@ def tests_get(methods=["GET"]):
                           oda:location ?location
                     """)['results']['bindings']:
 
-        t = { k: v['value'] for k, v in r.items() }
 
         print("test:", t)
 
@@ -221,6 +220,57 @@ def tests_post():
         pass
 
     return jsonify({})
+
+@app.route('/', methods=["GET"])
+def goals_get():
+    tests=[]
+
+    for r in odakb.sparql.select(query="""
+                    ?test oda:belongsTo oda:basic_testkit; 
+                          a oda:test;
+                          a oda:workflow;
+                          oda:callType ?call_type;
+                          oda:location ?location;
+                    """)['results']['bindings']:
+
+        t = { k: v['value'] for k, v in r.items() }
+        
+        print("test:", t)
+
+        t['expects'] = []
+
+        for r in odakb.sparql.select(query="""
+                        %s oda:expects ?expectation 
+                        """%t['test'])['results']['bindings']:
+
+            t['expects'].append()
+
+
+
+        tests.append(t)
+
+    return jsonify({})
+
+@app.route('/goals', methods=["GET"])
+def goals_get():
+    tests=[]
+
+    for r in odakb.sparql.select(query="""
+                    ?test oda:belongsTo oda:basic_testkit; 
+                          a oda:test;
+                          a oda:workflow;
+                          oda:callType ?call_type;
+                          oda:location ?location
+                    """)['results']['bindings']:
+
+        t = { k: v['value'] for k, v in r.items() }
+
+        print("test:", t)
+
+        tests.append(t)
+
+    return jsonify({})
+
 
 @app.route('/stats')
 def stats():
