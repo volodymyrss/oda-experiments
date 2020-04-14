@@ -1,6 +1,8 @@
 from flask import Flask
 from flask import render_template,make_response,request,jsonify
 
+import pprint
+
 import peewee
 import datetime
 import yaml
@@ -163,23 +165,50 @@ app = create_app()
 
 @app.route('/tests')
 def tests_get(methods=["GET"]):
+    return jsonify(get_tests())
+
+def get_tests():
     tests=[]
 
-    for r in odakb.sparql.select(query="""
+    for t in odakb.sparql.select(query="""
                     ?test oda:belongsTo oda:basic_testkit; 
                           a oda:test;
                           a oda:workflow;
                           oda:callType ?call_type;
                           oda:location ?location
-                    """)['results']['bindings']:
+                    """):
 
 
-        print("test:", t)
+        t['expects'] = {}
+
+        for r in odakb.sparql.select(query="""
+                        <%s> oda:expects ?expectation .
+                        ?expectation a ?ex_type
+                        """%t['test']):
+
+            binding = r['expectation'].split("#")[1][len("input_"):]
+
+            t['expects'][binding] = r['ex_type']
+
+        logger.info("test: \n" + pprint.pformat(t))
 
         tests.append(t)
 
-    return jsonify(tests)
+    return tests
 
+
+def get_goals():
+    goals = []
+    for test in get_tests():
+        for bind, ex in test['expects'].items():
+            for option in odakb.sparql.select('?opt a <%s>'%ex):
+                goals.append({bind: option['opt']})
+
+    return goals
+
+@app.route('/goals')
+def goals_get(methods=["GET"]):
+    return jsonify(get_goals())
 
 @app.route('/test-results')
 def test_results_get(methods=["GET"]):
@@ -221,55 +250,7 @@ def tests_post():
 
     return jsonify({})
 
-@app.route('/', methods=["GET"])
-def goals_get():
-    tests=[]
 
-    for r in odakb.sparql.select(query="""
-                    ?test oda:belongsTo oda:basic_testkit; 
-                          a oda:test;
-                          a oda:workflow;
-                          oda:callType ?call_type;
-                          oda:location ?location;
-                    """)['results']['bindings']:
-
-        t = { k: v['value'] for k, v in r.items() }
-        
-        print("test:", t)
-
-        t['expects'] = []
-
-        for r in odakb.sparql.select(query="""
-                        %s oda:expects ?expectation 
-                        """%t['test'])['results']['bindings']:
-
-            t['expects'].append()
-
-
-
-        tests.append(t)
-
-    return jsonify({})
-
-@app.route('/goals', methods=["GET"])
-def goals_get():
-    tests=[]
-
-    for r in odakb.sparql.select(query="""
-                    ?test oda:belongsTo oda:basic_testkit; 
-                          a oda:test;
-                          a oda:workflow;
-                          oda:callType ?call_type;
-                          oda:location ?location
-                    """)['results']['bindings']:
-
-        t = { k: v['value'] for k, v in r.items() }
-
-        print("test:", t)
-
-        tests.append(t)
-
-    return jsonify({})
 
 
 @app.route('/stats')
