@@ -8,6 +8,6 @@ pytest-flask
 
 keyring
 
-oda-knowledge-base==0.5.1
+oda-knowledge-base==0.5.2
 
 Flask-JWT
