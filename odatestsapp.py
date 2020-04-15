@@ -4,6 +4,7 @@ from flask import render_template,make_response,request,jsonify
 import pprint
 
 import hashlib
+import copy
 
 import peewee
 import datetime
@@ -209,7 +210,14 @@ def get_goals():
             for option in odakb.sparql.select('?opt a <%s>'%ex):
                 goals.append({"test": test, 'inputs': {bind: option['opt']}})
 
-    return goals
+    tgoals = []
+    for _g in goals:
+        tgoals.append(_g)
+        g = copy.deepcopy(_g)
+        g['inputs']['timestamp'] = midnight_timestamp()
+        tgoals.append(g)
+
+    return tgoals
 
 @app.route('/goals')
 def goals_get(methods=["GET"]):
@@ -423,6 +431,9 @@ def resubmit(scope,selector):
 #                    return code.app.wsgifunc()
 
 
+def midnight_timestamp():
+    now = datetime.datetime.now()
+    return datetime.datetime(now.year, now.month, now.day).timestamp()
 
 @app.route('/evaluate')
 def evaluate_one():
