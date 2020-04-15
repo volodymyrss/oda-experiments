@@ -13,11 +13,8 @@ run: build
 
 build:
 	docker build -t $(IMAGE) .
-
-push: build note-image
-	docker push $(IMAGE)
-
-note-image: .FORCE
 	echo $(IMAGE) > image-name
 
-.FORCE:
+push: build
+	docker push $(IMAGE)
+
