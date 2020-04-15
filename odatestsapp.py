@@ -469,9 +469,9 @@ def evaluate(w):
         return r
     else:
         try:
-            r = dict(status='success', result = run(w))
+            r = dict(status='success', origin="run", result = run(w))
         except Exception as e:
-            r = dict(status='failure', exception = repr(e))
+            r = dict(status='failure', origin="run", exception = repr(e))
 
         store(w, r)
         return r
