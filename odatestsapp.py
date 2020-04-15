@@ -8,6 +8,8 @@ import datetime
 import yaml
 import io
 
+import subprocess
+
 
 from flask_jwt import JWT, jwt_required, current_identity
 from werkzeug.security import safe_str_cmp
@@ -202,7 +204,7 @@ def get_goals():
     for test in get_tests():
         for bind, ex in test['expects'].items():
             for option in odakb.sparql.select('?opt a <%s>'%ex):
-                goals.append({bind: option['opt']})
+                goals.append({"test": test, 'inputs': {bind: option['opt']}})
 
     return goals
 
@@ -417,10 +419,38 @@ def resubmit(scope,selector):
 #                   server.load_config(configfile)
 #                    return code.app.wsgifunc()
 
+
+
+@app.route('/run')
+def run_one():
+    skip = request.args.get('skip', 0, type=int)
+
+    one_goal = get_goals()[skip]
+    return jsonify(run(one_goal))
+    #return make_response("deleted %i"%nentries)
+
+
 #from gunicorn.app.base import Application
 #Application().run(app,port=5555,debug=True,host=args.host)
 
 #       MyApplication().run()
+
+# to oda-kb, or better runner
+def run(w):
+    if w['test']['call_type'] == "http://odahub.io/ontology#python_function":
+        return run_python_function(w)
+
+def run_python_function(w):
+    try:
+        url, func = w['test']['location'].split("::")
+    except Exception as e:
+        raise Exception("can not split", w['test']['location'], e)
+
+    pars = ",".join(["%s=\"%s\""%(k,v) for k,v in w['inputs'].items()])
+
+    c = "curl %s  | awk 'END {print \"%s(%s)\"} 1' | python -"%(url, func, pars.replace("\"", "\\\"")) 
+    print(c)
+    return dict(stdout=subprocess.check_output(['bash', '-c', c]).decode())
 
 
 def listen(args):

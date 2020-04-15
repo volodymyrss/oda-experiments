@@ -34,3 +34,7 @@ def test_list_testresults(client):
 
 def test_get_testresults(client):
     pass
+
+def test_run_one(client):
+    r = client.get(url_for("run_one"))
+    print(r, r.json)
