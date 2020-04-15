@@ -441,7 +441,10 @@ def evaluate_one():
 
     one_goal = get_goals()[skip]
 
-    return jsonify(evaluate(one_goal))
+    return jsonify(dict(
+                workflow = one_goal,
+                value = evaluate(one_goal)
+            ))
     #return make_response("deleted %i"%nentries)
 
 
@@ -465,7 +468,11 @@ def evaluate(w):
     if r is not None:
         return r
     else:
-        r = run(w)
+        try:
+            r = dict(status='success', result = run(w))
+        except Exception as e:
+            r = dict(status='failure', exception = repr(e))
+
         store(w, r)
         return r
 
