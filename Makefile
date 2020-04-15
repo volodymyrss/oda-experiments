@@ -1,4 +1,4 @@
-IMAGE=admin.reproducible.online/oda-tests:$(shell git describe --always --dirty)
+IMAGE=admin.reproducible.online/oda-tests:$(shell git describe --always)
 CONTAINER=odatests
 
 run: build
@@ -16,3 +16,6 @@ build:
 
 push: build
 	docker push $(IMAGE)
+
+note-image:
+	echo $(IMAGE) > image-name
