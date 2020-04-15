@@ -11,3 +11,5 @@ keyring
 oda-knowledge-base==0.5.2
 
 Flask-JWT
+
+jsonschema

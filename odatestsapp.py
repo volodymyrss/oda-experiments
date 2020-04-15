@@ -3,6 +3,8 @@ from flask import render_template,make_response,request,jsonify
 
 import pprint
 
+import hashlib
+
 import peewee
 import datetime
 import yaml
@@ -173,10 +175,11 @@ def get_tests():
     tests=[]
 
     for t in odakb.sparql.select(query="""
-                    ?test oda:belongsTo oda:basic_testkit; 
+                    ?workflow oda:belongsTo oda:basic_testkit; 
                           a oda:test;
                           a oda:workflow;
                           oda:callType ?call_type;
+                          oda:callContext ?call_context;
                           oda:location ?location
                     """):
 
@@ -186,7 +189,7 @@ def get_tests():
         for r in odakb.sparql.select(query="""
                         <%s> oda:expects ?expectation .
                         ?expectation a ?ex_type
-                        """%t['test']):
+                        """%t['workflow']):
 
             binding = r['expectation'].split("#")[1][len("input_"):]
 
@@ -421,12 +424,13 @@ def resubmit(scope,selector):
 
 
 
-@app.route('/run')
-def run_one():
+@app.route('/evaluate')
+def evaluate_one():
     skip = request.args.get('skip', 0, type=int)
 
     one_goal = get_goals()[skip]
-    return jsonify(run(one_goal))
+
+    return jsonify(evaluate(one_goal))
     #return make_response("deleted %i"%nentries)
 
 
@@ -436,8 +440,57 @@ def run_one():
 #       MyApplication().run()
 
 # to oda-kb, or better runner
+
+import jsonschema
+import json
+
+def evaluate(w):
+    jsonschema.validate(w, json.loads(open("workflow-schema.json").read()))
+
+    print("evaluate this", w)
+
+    r = restore(w) 
+
+    if r is not None:
+        return r
+    else:
+        r = run(w)
+        store(w, r)
+        return r
+
+
+def w2uri(w):
+    return "http://odahub.io#data/"+hashlib.sha256(json.dumps(w).encode()).hexdigest()[:16]
+
+def store(w, d):
+    uri = w2uri(w)
+
+    b = odakb.datalake.store(d)
+    r = odakb.sparql.insert("<%s> oda:bucket \"%s\""%(uri, b))
+
+def restore(w):
+    uri = w2uri(w)
+
+    try:
+        r = odakb.sparql.select_one("<%s> oda:bucket ?bucket"%uri)
+
+        d = odakb.datalake.restore(r['bucket'])
+
+        return d
+
+    except odakb.sparql.NoAnswers:
+        print("not known: %s"%uri)
+        return None
+
+    except odakb.sparql.ManyAnswers:
+        print("ambigiously known: %s"%uri)
+        return None
+
 def run(w):
-    if w['test']['call_type'] == "http://odahub.io/ontology#python_function":
+    print("run this", w)
+
+    if w['test']['call_type'] == "http://odahub.io/ontology#python_function" \
+       and w['test']['call_context'] == "http://odahub.io/ontology#python3":
         return run_python_function(w)
 
 def run_python_function(w):

@@ -17,5 +17,7 @@ build:
 push: build
 	docker push $(IMAGE)
 
-note-image:
+note-image: .FORCE
 	echo $(IMAGE) > image-name
+
+.FORCE:
