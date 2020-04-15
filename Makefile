@@ -14,7 +14,7 @@ run: build
 build:
 	docker build -t $(IMAGE) .
 
-push: build
+push: build note-image
 	docker push $(IMAGE)
 
 note-image: .FORCE

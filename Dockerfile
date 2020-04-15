@@ -6,4 +6,6 @@ RUN pip install -r /requirements.txt
 
 ADD odatestsapp.py /app.py
 
+ADD workflow-schema.json /workflow-schema.json
+
 ENTRYPOINT gunicorn app:app -b 0.0.0.0:8000 --log-level DEBUG

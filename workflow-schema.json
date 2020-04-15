@@ -1,0 +1,9 @@
+{
+    "$id": "http://odahub.io/ontology#workflow-schema",
+    "properties": {
+        "test": {
+            "required": ["call_type", "call_context", "workflow"]
+        }
+    },
+    "required": ["test", "inputs"]
+}
