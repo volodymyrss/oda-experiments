@@ -514,10 +514,23 @@ def list_data():
 
     return result
 
+def get_data(uri):
+    r = odakb.sparql.select_one("""
+            {data} oda:bucket ?bucket . 
+                     """.format(data=odakb.sparql.render_uri(uri)))
+
+    b = odakb.datalake.restore(r['bucket'])
+
+    return b
+
 
 @app.route('/data')
 def data():
-    return jsonify(list_data())
+    uri = request.args.get("uri")
+    if uri:
+        return jsonify(get_data(uri))
+    else:
+        return jsonify(list_data())
 
 @app.route('/view-data')
 def viewdata():
@@ -606,7 +619,13 @@ def run_python_function(w):
 
     c = "curl %s  | awk 'END {print \"%s(%s)\"} 1' | python -"%(url, func, pars.replace("\"", "\\\"")) 
     print(c)
-    return dict(stdout=subprocess.check_output(['bash', '-c', c]).decode())
+
+    try:
+        stdout = subprocess.check_output(['bash', '-c', c]).decode()
+    except Exception as e:
+        pass
+
+    return dict(stdout=stdout)
 
 
 def listen(args):

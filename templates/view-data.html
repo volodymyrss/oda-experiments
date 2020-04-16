@@ -13,21 +13,23 @@
     </thead>
 
     {% for d in data %}
-    <tr class="{{ {'http://odahub.io/ontology#success': 'success', 'http://odahub.io/ontology#failure': 'danger' }[d.test_status] }}">
-        <td>{{d.uri}}</td>
-        <td>{{d.workflow}}</td>
-        <td>{{d.test_status}}</td>
-        <td>
-          <table class="table">
-            {% for v in d.inputs %}
-                <tr>
-                    <td>{{v.input_binding}}</td>
-                    <td>{{v.input_value}}</td>
-                </tr>
-            {% endfor %}
-          </table>
-        </td>
-    </tr>
+        {% set status_class = {'http://odahub.io/ontology#success': 'success', 'http://odahub.io/ontology#failure': 'danger' }[d.test_status] %}
+        {% set status_message = {'http://odahub.io/ontology#success': 'SUCCESS', 'http://odahub.io/ontology#failure': 'FAIL' }[d.test_status] %}
+        <tr>
+            <td><a href="data?uri={{d.uri | urlencode}}">{{d.uri}}</td>
+            <td>{{d.workflow}}</td>
+            <td class="{{ status_class }} text-{{status_class}} text-center">{{ status_message }}</td>
+            <td>
+              <table class="table">
+                {% for v in d.inputs %}
+                    <tr>
+                        <td>{{v.input_binding}}</td>
+                        <td>{{v.input_value}}</td>
+                    </tr>
+                {% endfor %}
+              </table>
+            </td>
+        </tr>
     {% endfor %}
 
   </table>
