@@ -234,13 +234,18 @@ def get_goals():
     for test in get_tests():
         for bind, ex in test['expects'].items():
             for option in odakb.sparql.select('?opt a <%s>'%ex):
-                goals.append({"base": test, 'inputs': {bind: option['opt']}})
+                if not '#input_' in option['opt']:
+                    goals.append({"base": test, 'inputs': {bind: option['opt']}}) #, 'reason': odakb.sparql.render_rdf('?opt a <%s>'%ex, option)}})
 
     tgoals = []
     for _g in goals:
-        tgoals.append(_g)
+        #tgoals.append(_g)
         g = copy.deepcopy(_g)
         g['inputs']['timestamp'] = midnight_timestamp()
+        tgoals.append(g)
+
+        g = copy.deepcopy(_g)
+        g['inputs']['timestamp'] = recent_timestamp()
         tgoals.append(g)
 
     return tgoals
@@ -457,9 +462,14 @@ def resubmit(scope,selector):
 #                    return code.app.wsgifunc()
 
 
+
 def midnight_timestamp():
     now = datetime.datetime.now()
     return datetime.datetime(now.year, now.month, now.day).timestamp()
+
+def recent_timestamp():
+    sind = datetime.datetime.now().timestamp() - midnight_timestamp()
+    return midnight_timestamp() + int(sind/3600)*3600
 
 @app.route('/evaluate')
 def evaluate_one():
