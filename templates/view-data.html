@@ -1,0 +1,34 @@
+{% extends "layout.html" %}
+{% block content %}
+
+  <table class="table">
+
+    <thead>
+     <tr>
+       <th>URI</th>
+       <th>Curryied Workflow</th>
+       <th>test status</th>
+       <th>inputs</th>
+     </tr>
+    </thead>
+
+    {% for d in data %}
+    <tr class="{{ {'http://odahub.io/ontology#success': 'success', 'http://odahub.io/ontology#failure': 'danger' }[d.test_status] }}">
+        <td>{{d.uri}}</td>
+        <td>{{d.workflow}}</td>
+        <td>{{d.test_status}}</td>
+        <td>
+          <table class="table">
+            {% for v in d.inputs %}
+                <tr>
+                    <td>{{v.input_binding}}</td>
+                    <td>{{v.input_value}}</td>
+                </tr>
+            {% endfor %}
+          </table>
+        </td>
+    </tr>
+    {% endfor %}
+
+  </table>
+{% endblock %}
