@@ -168,9 +168,35 @@ def create_app():
 
 app = create_app()
 
-@app.route('/tests')
-def tests_get(methods=["GET"]):
+@app.route('/tests', methods=["GET"])
+def tests_get():
     return jsonify(get_tests())
+
+def add_basic_platform_test(uri, location):
+    assert uri
+    assert location
+
+    odakb.sparql.insert(query="""
+                    {uri} oda:belongsTo oda:basic_testkit . 
+                    {uri} a oda:test .
+                    {uri} a oda:workflow .
+                    {uri} oda:callType oda:python_function .
+                    {uri} oda:callContext oda:python3 .
+                    {uri} oda:location {location} .
+                    {uri} oda:expects oda:input_cdciplatform .
+                    """.format(
+                            uri=odakb.sparql.render_uri(uri), 
+                            location=odakb.sparql.render_uri(location)
+                         ))
+
+
+@app.route('/tests', methods=["PUT"])
+def tests_put():
+    add_basic_platform_test(
+                request.args.get('uri'),
+                request.args.get('location'),
+            )
+    return jsonify(dict(status="ok"))
 
 def get_tests():
     tests=[]
@@ -297,7 +323,7 @@ def stats():
     #return jsonify({k:len(v) for k,v in bystate.items()})
 
 @app.route('/list')
-def list():
+def list_entries():
     try:
         db.connect()
     except peewee.OperationalError as e:
@@ -443,14 +469,60 @@ def evaluate_one():
     r = []
 
     for goal in get_goals()[skip:skip+n]:
+        runtime_origin, value = evaluate(goal)
         r.append(dict(
                 workflow = goal,
-                value = evaluate(goal),
+                value = value,
+                runtime_origin = runtime_origin,
                 uri = w2uri(goal),
             ))
 
     return jsonify(r)
     #return make_response("deleted %i"%nentries)
+
+def list_data():
+    r = odakb.sparql.select("""
+            ?data oda:curryingOf ?workflow; 
+                  ?input_binding ?input_value;
+                  oda:test_status ?test_status .
+
+            ?input_binding a oda:curried_input .
+
+            ?workflow a oda:test; 
+                      oda:belongsTo oda:basic_testkit .""")
+
+    bydata = defaultdict(list)
+    for d in r:
+        bydata[d['data']].append(d)
+
+    result = []
+    for k, v in bydata.items():
+        R={}
+        result.append(R)
+
+        R['uri'] = k
+
+        for common_key in "test_status", "workflow":
+            l = [ve[common_key] for ve in v]
+            assert all([_l==l[0] for _l in l])
+            R[common_key] = l[0]
+             
+        R['inputs'] = []
+        for ve in v:
+            R['inputs'].append(dict(input_binding=ve['input_binding'], input_value=ve['input_value']))
+
+
+    return result
+
+
+@app.route('/data')
+def data():
+    return jsonify(list_data())
+
+@app.route('/view-data')
+def viewdata():
+    return render_template('view-data.html', data=list_data())
+
 
 
 #from gunicorn.app.base import Application
@@ -468,10 +540,11 @@ def evaluate(w):
 
     print("evaluate this", w)
 
+
     r = restore(w) 
 
     if r is not None:
-        return r
+        return 'restored', r
     else:
         try:
             r = dict(status='success', origin="run", result = run(w))
@@ -479,7 +552,7 @@ def evaluate(w):
             r = dict(status='failure', origin="run", exception = repr(e))
 
         store(w, r)
-        return r
+        return 'ran', r
 
 
 def w2uri(w):
@@ -488,20 +561,25 @@ def w2uri(w):
 def store(w, d):
     uri = w2uri(w)
 
-    b = odakb.datalake.store(d)
-    r = odakb.sparql.insert("%s oda:location oda:minioBucket"%(uri))
-    r = odakb.sparql.insert("%s oda:bucket \"%s\""%(uri, b))
-    r = odakb.sparql.insert("%s oda:curyingOf <%s>"%(uri, w['base']['workflow']))
+    b = odakb.datalake.store(dict(data=d, workflow=w))
+    odakb.sparql.insert("%s oda:location oda:minioBucket"%(uri))
+    odakb.sparql.insert("%s oda:bucket \"%s\""%(uri, b))
+    odakb.sparql.insert("%s oda:curryingOf <%s>"%(uri, w['base']['workflow']))
+    odakb.sparql.insert("%s oda:test_status oda:%s"%(uri, d['status']))
+
+    for k, v in w['inputs'].items():
+        odakb.sparql.insert("%s oda:curryied_input_%s \"%s\""%(uri, k, v))
+        odakb.sparql.insert("oda:curryied_input_%s a oda:curried_input"%(k))
 
 def restore(w):
     uri = w2uri(w)
 
     try:
-        r = odakb.sparql.select_one("<%s> oda:bucket ?bucket"%uri)
+        r = odakb.sparql.select_one("%s oda:bucket ?bucket"%odakb.sparql.render_uri(uri, {}))
 
-        d = odakb.datalake.restore(r['bucket'])
+        b = odakb.datalake.restore(r['bucket'])
 
-        return d
+        return b['data']
 
     except odakb.sparql.NoAnswers:
         print("not known: %s"%uri)

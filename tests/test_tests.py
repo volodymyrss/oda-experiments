@@ -30,7 +30,16 @@ def test_testgoals(client):
     
 
 def test_list_testresults(client):
-    pass
+    r = client.get(url_for("data"))
+    print(r.json)
+
+def test_view_testresults(client):
+    r = client.get(url_for("viewdata"))
+    print(r.json)
+
+def test_put(client):
+    r = client.put(url_for("tests_put", uri="oda:test-test", location="known"))
+    print(r.json)
 
 def test_get_testresults(client):
     pass
