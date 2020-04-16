@@ -1,9 +1,9 @@
 {% extends "layout.html" %}
 {% block content %}
 
-  <table class="table">
+  <table class="table table-striped table-sm">
 
-    <thead>
+    <thead class="thead">
      <tr>
        <th>URI</th>
        <th>Curryied Workflow</th>
@@ -16,18 +16,18 @@
         {% set status_class = {'http://odahub.io/ontology#success': 'success', 'http://odahub.io/ontology#failure': 'danger' }[d.test_status] %}
         {% set status_message = {'http://odahub.io/ontology#success': 'SUCCESS', 'http://odahub.io/ontology#failure': 'FAIL' }[d.test_status] %}
         <tr>
-            <td><a href="data?uri={{d.uri | urlencode}}">{{d.uri}}</td>
-            <td>{{d.workflow}}</td>
+            <td><a href="data?uri={{d.uri | urlencode}}">{{d.uri}}<a href="graph?uri={{d.workflow | urlencode}}"><img class="button" src="static/img/rdf.png"/></a></td>
+            <td><a href="view-workflow?uri={{d.workflow | urlencode}}"> {{d.workflow}}</a><a href="graph?uri={{d.workflow | urlencode}}"><img class="button" src="static/img/rdf.png"/></a></td>
             <td class="{{ status_class }} text-{{status_class}} text-center">{{ status_message }}</td>
             <td>
-              <table class="table">
+                <ul>
                 {% for v in d.inputs %}
-                    <tr>
-                        <td>{{v.input_binding}}</td>
-                        <td>{{v.input_value}}</td>
-                    </tr>
+                    <li>
+                        <span>{{v.input_binding}}</span>
+                        <span>{{v.input_value}}</span>
+                    </li>
                 {% endfor %}
-              </table>
+                </ul>
             </td>
         </tr>
     {% endfor %}

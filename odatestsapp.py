@@ -13,7 +13,6 @@ import io
 
 import subprocess
 
-
 from flask_jwt import JWT, jwt_required, current_identity
 from werkzeug.security import safe_str_cmp
 
@@ -523,6 +522,57 @@ def get_data(uri):
 
     return b
 
+def get_graph(uri):
+    r = [ "{s} {p} {uri}".format(uri=uri, **l)
+           for l in odakb.sparql.select("?s ?p {}".format(odakb.sparql.render_uri(uri))) ]
+    r += [ "{uri} {p} {o}".format(uri=uri, **l)
+           for l in odakb.sparql.select("{} ?p ?o".format(odakb.sparql.render_uri(uri))) ]
+    r += [ "{s} {uri} {o}".format(uri=uri, **l)
+           for l in odakb.sparql.select("?s {} ?o".format(odakb.sparql.render_uri(uri))) ]
+
+    return r
+
+
+def describe_workflow(uri):
+    ts = odakb.sparql.select(query="""
+                    {uri} a oda:workflow;
+                          ?p ?o .
+                    """.format(uri=odakb.sparql.render_uri(uri)))
+
+    r={}
+    w=dict(uri=uri, relations=r)
+
+    for t in ts:
+        r[t['p']] = t['o']
+
+        if t['p'] == "http://odahub.io/ontology#location": # viewers by class
+            w['location'], w['function'] = t['o'].split("::")
+
+    return w
+
+@app.route('/workflow')
+def workflow():
+    uri = request.args.get("uri")
+    if uri:
+        return jsonify(describe_workflow(uri))
+    else:
+        return jsonify(dict(status="missing uri"))
+
+@app.route('/view-workflow')
+def viewworkflow():
+    uri = request.args.get("uri")
+    if uri:
+        return render_template("view-workflow.html", w=describe_workflow(uri))
+    else:
+        return jsonify(dict(status="missing uri"))
+
+@app.route('/graph')
+def graph():
+    uri = request.args.get("uri")
+    if uri:
+        return jsonify(get_graph(uri))
+    else:
+        return jsonify(dict(status="missing uri"))
 
 @app.route('/data')
 def data():

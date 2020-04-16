@@ -4,9 +4,10 @@ ADD requirements.txt /requirements.txt
 RUN pip install --upgrade pip
 RUN pip install -r /requirements.txt
 
-ADD odatestsapp.py /app.py
-ADD templates /templates
-
 ADD workflow-schema.json /workflow-schema.json
+ADD templates /templates
+ADD static /static
+ADD odatestsapp.py /app.py
+
 
 ENTRYPOINT gunicorn app:app -b 0.0.0.0:8000 --log-level DEBUG
