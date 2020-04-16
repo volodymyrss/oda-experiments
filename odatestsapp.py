@@ -208,7 +208,7 @@ def get_goals():
     for test in get_tests():
         for bind, ex in test['expects'].items():
             for option in odakb.sparql.select('?opt a <%s>'%ex):
-                goals.append({"test": test, 'inputs': {bind: option['opt']}})
+                goals.append({"base": test, 'inputs': {bind: option['opt']}})
 
     tgoals = []
     for _g in goals:
@@ -438,13 +438,18 @@ def midnight_timestamp():
 @app.route('/evaluate')
 def evaluate_one():
     skip = request.args.get('skip', 0, type=int)
+    n = request.args.get('n', 1, type=int)
 
-    one_goal = get_goals()[skip]
+    r = []
 
-    return jsonify(dict(
-                workflow = one_goal,
-                value = evaluate(one_goal)
+    for goal in get_goals()[skip:skip+n]:
+        r.append(dict(
+                workflow = goal,
+                value = evaluate(goal),
+                uri = w2uri(goal),
             ))
+
+    return jsonify(r)
     #return make_response("deleted %i"%nentries)
 
 
@@ -478,13 +483,15 @@ def evaluate(w):
 
 
 def w2uri(w):
-    return "http://odahub.io#data/"+hashlib.sha256(json.dumps(w).encode()).hexdigest()[:16]
+    return "data:w-"+hashlib.sha256(json.dumps(w).encode()).hexdigest()[:16]
 
 def store(w, d):
     uri = w2uri(w)
 
     b = odakb.datalake.store(d)
-    r = odakb.sparql.insert("<%s> oda:bucket \"%s\""%(uri, b))
+    r = odakb.sparql.insert("%s oda:location oda:minioBucket"%(uri))
+    r = odakb.sparql.insert("%s oda:bucket \"%s\""%(uri, b))
+    r = odakb.sparql.insert("%s oda:curyingOf <%s>"%(uri, w['base']['workflow']))
 
 def restore(w):
     uri = w2uri(w)
@@ -507,15 +514,15 @@ def restore(w):
 def run(w):
     print("run this", w)
 
-    if w['test']['call_type'] == "http://odahub.io/ontology#python_function" \
-       and w['test']['call_context'] == "http://odahub.io/ontology#python3":
+    if w['base']['call_type'] == "http://odahub.io/ontology#python_function" \
+       and w['base']['call_context'] == "http://odahub.io/ontology#python3":
         return run_python_function(w)
 
 def run_python_function(w):
     try:
-        url, func = w['test']['location'].split("::")
+        url, func = w['base']['location'].split("::")
     except Exception as e:
-        raise Exception("can not split", w['test']['location'], e)
+        raise Exception("can not split", w['base']['location'], e)
 
     pars = ",".join(["%s=\"%s\""%(k,v) for k,v in w['inputs'].items()])
 
