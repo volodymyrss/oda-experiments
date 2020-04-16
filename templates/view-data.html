@@ -16,15 +16,15 @@
         {% set status_class = {'http://odahub.io/ontology#success': 'success', 'http://odahub.io/ontology#failure': 'danger' }[d.test_status] %}
         {% set status_message = {'http://odahub.io/ontology#success': 'SUCCESS', 'http://odahub.io/ontology#failure': 'FAIL' }[d.test_status] %}
         <tr>
-            <td><a href="data?uri={{d.uri | urlencode}}">{{d.uri}}<a href="graph?uri={{d.workflow | urlencode}}"><img class="button" src="static/img/rdf.svg"/></a></td>
-            <td><a href="view-workflow?uri={{d.workflow | urlencode}}"> {{d.workflow}}</a><a href="graph?uri={{d.workflow | urlencode}}"><img class="button" src="static/img/rdf.svg"/></a></td>
+            <td><a href="data?uri={{d.uri | urlencode}}">{{d.uri.replace("http://odahub.io/datalake/minio#", "")}}<a href="graph?uri={{d.workflow | urlencode}}"><img class="button" src="static/img/rdf.svg"/></a></td>
+            <td><a href="view-workflow?uri={{d.workflow | urlencode}}"> {{d.workflow.replace("http://odahub.io/ontology#", "")}}</a><a href="graph?uri={{d.workflow | urlencode}}"><img class="button" src="static/img/rdf.svg"/></a></td>
             <td class="{{ status_class }} text-{{status_class}} text-center">{{ status_message }}</td>
             <td>
                 <ul>
                 {% for v in d.inputs %}
                     <li>
-                        <span class="text-bold">{{v.input_binding.replace("http://odahub.io/ontology#curryied_","")}}</span> = 
-                        <span>{{v.input_value.replace("http://odahub.io/ontology#","")}}</span>
+                        <b>{{v.input_binding.replace("http://odahub.io/ontology#curryied_input_","")}}</b> = 
+                        {{v.input_value.replace("http://odahub.io/ontology#","")}}</span>
                     </li>
                 {% endfor %}
                 </ul>

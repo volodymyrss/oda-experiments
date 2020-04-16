@@ -216,6 +216,7 @@ def get_tests():
                         <%s> oda:expects ?expectation .
                         ?expectation a ?ex_type
                         """%t['workflow']):
+            #if 
 
             binding = r['expectation'].split("#")[1][len("input_"):]
 
