@@ -1,0 +1,13 @@
+.table tbody tr > td.success {
+      background-color: #dff0d8 !important;
+  }
+
+.table tbody tr > td.danger {
+      background-color: #ffd0d8 !important;
+  }
+
+img.button {
+      width: 20px;
+      border-radius: 4px;
+      padding: 3px;
+}
