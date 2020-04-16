@@ -5,6 +5,7 @@ RUN pip install --upgrade pip
 RUN pip install -r /requirements.txt
 
 ADD odatestsapp.py /app.py
+ADD templates /templates
 
 ADD workflow-schema.json /workflow-schema.json
 
