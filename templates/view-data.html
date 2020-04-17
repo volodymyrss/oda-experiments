@@ -10,6 +10,7 @@
        <th>Workflow</th>
        <th>Status</th>
        <th>Inputs</th>
+       <th>Input Timestamp</th>
      </tr>
     </thead>
 
@@ -25,10 +26,18 @@
                 {% for v in d.inputs %}
                     <li>
                         <b>{{v.input_binding.replace("http://odahub.io/ontology#curryied_input_","")}}</b> = 
-                        {{v.input_value.replace("http://odahub.io/ontology#","")}}</span>
+                            {{v.input_value.replace("http://odahub.io/ontology#","")}}</span>
+                        {% if v.input_binding == "http://odahub.io/ontology#curryied_input_timestamp" %}
+                            ({{ ((timestamp_now-(v.input_value|float))*3600**-1) | round(1) }} h ago)
+                        {% endif %}
                     </li>
                 {% endfor %}
                 </ul>
+            </td>
+            <td class="warning">
+                {% if d.timestamp %}
+                    {{ d.timestamp }} ({{ d.timestamp_age_h | round(1)}} h ago)
+                {% endif %}
             </td>
         </tr>
     {% endfor %}

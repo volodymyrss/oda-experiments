@@ -189,8 +189,12 @@ def add_basic_platform_test(uri, location):
                             location=odakb.sparql.render_uri(location)
                          ))
 
+@app.route('/add-test', methods=["GET"])
+def add_test_form():
+    return render_template("add-form.html")
 
 @app.route('/tests', methods=["PUT"])
+@app.route('/tests/add', methods=["GET"])
 def tests_put():
     add_basic_platform_test(
                 request.args.get('uri'),
@@ -230,7 +234,7 @@ def get_tests(f=None):
     return tests
 
 
-def get_goals(f):
+def get_goals(f=None):
     goals = []
     for test in get_tests(f):
         for bind, ex in test['expects'].items():
@@ -253,7 +257,9 @@ def get_goals(f):
 
 @app.route('/goals')
 def goals_get(methods=["GET"]):
-    return jsonify(get_goals())
+    f = request.args.get('f', None)
+
+    return jsonify(get_goals(f))
 
 @app.route('/test-results')
 def test_results_get(methods=["GET"]):
@@ -498,10 +504,14 @@ def list_data():
                   ?input_binding ?input_value;
                   oda:test_status ?test_status .
 
+
             ?input_binding a oda:curried_input .
 
             ?workflow a oda:test; 
-                      oda:belongsTo oda:basic_testkit .""")
+                      oda:belongsTo oda:basic_testkit .
+
+            NOT EXISTS { ?d oda:realm oda:expired }
+                      """)
 
     bydata = defaultdict(list)
     for d in r:
@@ -522,9 +532,12 @@ def list_data():
         R['inputs'] = []
         for ve in v:
             R['inputs'].append(dict(input_binding=ve['input_binding'], input_value=ve['input_value']))
+            if ve['input_binding'] == "http://odahub.io/ontology#curryied_input_timestamp":
+                R['timestamp'] = float(ve['input_value'])
+                R['timestamp_age_h'] = (time.time() - R['timestamp'])/3600.
 
 
-    return result
+    return sorted(result, key=lambda x:-x.get('timestamp',0))
 
 def get_data(uri):
     r = odakb.sparql.select_one("""
@@ -602,9 +615,18 @@ def viewdata():
     d = list_data()
     request_stats = odakb.sparql.query_stats
 
-    r = render_template('view-data.html', data=d, request_stats=request_stats)
+    r = render_template('view-data.html', 
+                data=d, 
+                request_stats=request_stats,
+                timestamp_now=time.time()
+            )
     odakb.sparql.reset_stats_collection()
 
+    return r
+
+@app.route('/')
+def viewdash():
+    r = render_template('dashboard.html')
     return r
 
 
@@ -630,10 +652,7 @@ def evaluate(w):
     if r is not None:
         return 'restored', r
     else:
-        try:
-            r = dict(status='success', origin="run", result = run(w))
-        except Exception as e:
-            r = dict(status='failure', origin="run", exception = repr(e))
+        r = { 'origin':"run", **run(w)}
 
         store(w, r)
         return 'ran', r
@@ -692,11 +711,13 @@ def run_python_function(w):
     print(c)
 
     try:
-        stdout = subprocess.check_output(['bash', '-c', c]).decode()
+        result = dict(stdout=subprocess.check_output(['bash', '-c', c], stderr=subprocess.STDOUT).decode())
+        status = 'success'
     except Exception as e:
-        raise Exception("failed")
+        result = dict(stdout=e.output, exception=repr(e))
+        status = 'failed'
 
-    return dict(stdout=stdout)
+    return dict(result=result, status=status)
 
 
 def listen(args):
