@@ -16,7 +16,23 @@
   </head>
   <body>
     <div class="container">
-        {{ request_stats }}
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+          <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+            <div class="navbar-nav">
+              <a class="nav-item nav-link" href="tests">Tests</a>
+              <a class="nav-item nav-link" href="goals">Goals</a>
+              <a class="nav-item nav-link" href="view-data">Results</a>
+            </div>
+          </div>
+        </nav>
+    </div>
+    <div class="container">
+        <ul>
+            {% for rs in request_stats %}
+            <li><b>spent:</b> {{ rs.spent_seconds | round(4) }} seconds</li>
+            <li><b>query size:</b> {{ rs.query_size }}</li>
+            {% endfor %}
+        </ul>
     </div>
     <div class="container">
       {% block content %}{% endblock %}

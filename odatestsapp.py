@@ -169,7 +169,8 @@ app = create_app()
 
 @app.route('/tests', methods=["GET"])
 def tests_get():
-    return jsonify(get_tests())
+    f = request.args.get("f", None)
+    return jsonify(get_tests(f))
 
 def add_basic_platform_test(uri, location):
     assert uri
@@ -197,7 +198,7 @@ def tests_put():
             )
     return jsonify(dict(status="ok"))
 
-def get_tests():
+def get_tests(f=None):
     tests=[]
 
     for t in odakb.sparql.select(query="""
@@ -206,8 +207,8 @@ def get_tests():
                           a oda:workflow;
                           oda:callType ?call_type;
                           oda:callContext ?call_context;
-                          oda:location ?location
-                    """):
+                          oda:location ?location .
+                    """ + (f or "")):
 
 
         t['expects'] = {}
@@ -229,9 +230,9 @@ def get_tests():
     return tests
 
 
-def get_goals():
+def get_goals(f):
     goals = []
-    for test in get_tests():
+    for test in get_tests(f):
         for bind, ex in test['expects'].items():
             for option in odakb.sparql.select('?opt a <%s>'%ex):
                 if not '#input_' in option['opt']:
@@ -475,10 +476,11 @@ def recent_timestamp():
 def evaluate_one():
     skip = request.args.get('skip', 0, type=int)
     n = request.args.get('n', 1, type=int)
+    f = request.args.get('f', None) 
 
     r = []
 
-    for goal in get_goals()[skip:skip+n]:
+    for goal in get_goals(f)[skip:skip+n]:
         runtime_origin, value = evaluate(goal)
         r.append(dict(
                 workflow = goal,

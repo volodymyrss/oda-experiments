@@ -8,6 +8,11 @@ def test_get(client):
     r = client.get(url_for("tests_get"))
     print(r, r.json)
 
+def test_get_f(client):
+    r = client.get(url_for("tests_get", f="?workflow oda:domain oda:examples"))
+    print(r, r.json)
+    assert len(r.json)>0
+
 def test_post(client):
     pass
     #from odatestsapp import capp
