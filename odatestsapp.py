@@ -595,7 +595,15 @@ def data():
 
 @app.route('/view-data')
 def viewdata():
-    return render_template('view-data.html', data=list_data())
+    
+    odakb.sparql.reset_stats_collection()
+    d = list_data()
+    request_stats = odakb.sparql.query_stats
+
+    r = render_template('view-data.html', data=d, request_stats=request_stats)
+    odakb.sparql.reset_stats_collection()
+
+    return r
 
 
 
@@ -684,7 +692,7 @@ def run_python_function(w):
     try:
         stdout = subprocess.check_output(['bash', '-c', c]).decode()
     except Exception as e:
-        pass
+        raise Exception("failed")
 
     return dict(stdout=stdout)
 
