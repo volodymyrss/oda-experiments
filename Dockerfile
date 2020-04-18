@@ -8,6 +8,7 @@ ADD workflow-schema.json /workflow-schema.json
 ADD templates /templates
 ADD static /static
 ADD odatestsapp.py /app.py
+ADD odarun.py /odarun.py
 
 
 ENTRYPOINT gunicorn app:app -b 0.0.0.0:8000 --log-level DEBUG
