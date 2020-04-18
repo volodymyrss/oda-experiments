@@ -3,6 +3,8 @@ from flask import render_template,make_response,request,jsonify
 
 import pprint
 
+import requests
+
 import hashlib
 import copy
 
@@ -13,11 +15,15 @@ import io
 
 import subprocess
 
+import functools
+
 from flask_jwt import JWT, jwt_required, current_identity
 from werkzeug.security import safe_str_cmp
 
 
 import odakb
+import odakb.sparql
+import odakb.datalake
 
 import os
 import time
@@ -26,6 +32,8 @@ from hashlib import sha224
 from collections import OrderedDict, defaultdict
 import glob
 import logging
+
+import odarun
 
 try:
     import io
@@ -476,7 +484,33 @@ def midnight_timestamp():
 
 def recent_timestamp():
     sind = datetime.datetime.now().timestamp() - midnight_timestamp()
-    return midnight_timestamp() + int(sind/3600)*3600
+    return midnight_timestamp() + int(sind/600)*600
+
+@app.route('/offer-goal')
+def offer_goal():
+    skip = request.args.get('skip', 0, type=int)
+    n = request.args.get('n', 1, type=int)
+    f = request.args.get('f', None) 
+
+    r = []
+
+    for goal in get_goals(f)[skip:]:
+        e = evaluate(goal, allow_run=False)
+            
+        if e is None:
+            return jsonify(goal)
+
+    return jsonify(dict(warning="no goals"))
+
+@app.route('/report-goal')
+def report_goal():
+    goal = request.args.get('goal')
+    data = request.args.get('data')
+    worker = request.args.get('worker')
+
+    return jsonify()
+
+    #return make_response("deleted %i"%nentries)
 
 @app.route('/evaluate')
 def evaluate_one():
@@ -486,19 +520,24 @@ def evaluate_one():
 
     r = []
 
-    for goal in get_goals(f)[skip:skip+n]:
+    for goal in get_goals(f)[skip:]:
         runtime_origin, value = evaluate(goal)
-        r.append(dict(
-                workflow = goal,
-                value = value,
-                runtime_origin = runtime_origin,
-                uri = w2uri(goal),
-            ))
+
+        if runtime_origin != "restored":
+            r.append(dict(
+                    workflow = goal,
+                    value = value,
+                    runtime_origin = runtime_origin,
+                    uri = w2uri(goal),
+                ))
+
+        if len(r) >= n:
+            break
 
     return jsonify(r)
     #return make_response("deleted %i"%nentries)
 
-def list_data():
+def list_data(f=None):
     r = odakb.sparql.select("""
             ?data oda:curryingOf ?workflow; 
                   ?input_binding ?input_value;
@@ -508,10 +547,12 @@ def list_data():
             ?input_binding a oda:curried_input .
 
             ?workflow a oda:test; 
+                      oda:domain ?workflow_domains;
                       oda:belongsTo oda:basic_testkit .
 
-            NOT EXISTS { ?d oda:realm oda:expired }
-                      """)
+            NOT EXISTS { ?data oda:realm oda:expired }
+                      """+(f or ""))
+
 
     bydata = defaultdict(list)
     for d in r:
@@ -528,13 +569,21 @@ def list_data():
             l = [ve[common_key] for ve in v]
             assert all([_l==l[0] for _l in l])
             R[common_key] = l[0]
+        
+        for joined_key in "workflow_domains",:
+            l = [ve[joined_key] for ve in v]
+            R[joined_key] = list(set(l))
              
-        R['inputs'] = []
+        R['inputs'] = {}
         for ve in v:
-            R['inputs'].append(dict(input_binding=ve['input_binding'], input_value=ve['input_value']))
+            R['inputs'][ve['input_binding']] = input_value=ve['input_value']
             if ve['input_binding'] == "http://odahub.io/ontology#curryied_input_timestamp":
                 R['timestamp'] = float(ve['input_value'])
                 R['timestamp_age_h'] = (time.time() - R['timestamp'])/3600.
+
+        R['inputs'] = [dict(input_binding=k, input_value=v) for k,v in R['inputs'].items()]
+
+
 
 
     return sorted(result, key=lambda x:-x.get('timestamp',0))
@@ -610,16 +659,25 @@ def data():
 
 @app.route('/view-data')
 def viewdata():
-    
+    f = request.args.get("f", None)
+
     odakb.sparql.reset_stats_collection()
-    d = list_data()
+    d = list_data(f)
     request_stats = odakb.sparql.query_stats
 
+    if len(d)>0:
+        domains = set(functools.reduce(lambda x,y:x+y, [R['workflow_domains'] for R in d]))
+    else:
+        domains = []
+
     r = render_template('view-data.html', 
+                domains=domains,
                 data=d, 
                 request_stats=request_stats,
                 timestamp_now=time.time()
             )
+
+
     odakb.sparql.reset_stats_collection()
 
     return r
@@ -641,7 +699,7 @@ def viewdash():
 import jsonschema
 import json
 
-def evaluate(w):
+def evaluate(w, allow_run=True):
     jsonschema.validate(w, json.loads(open("workflow-schema.json").read()))
 
     print("evaluate this", w)
@@ -652,10 +710,14 @@ def evaluate(w):
     if r is not None:
         return 'restored', r
     else:
-        r = { 'origin':"run", **run(w)}
+        
+        if allow_run:
+            r = { 'origin':"run", **run(w)}
 
-        store(w, r)
-        return 'ran', r
+            store(w, r)
+            return 'ran', r
+        else:
+            return None
 
 
 def w2uri(w):
@@ -692,44 +754,7 @@ def restore(w):
         print("ambigiously known: %s"%uri)
         return None
 
-def run(w):
-    print("run this", w)
-
-    if w['base']['call_type'] == "http://odahub.io/ontology#python_function" \
-       and w['base']['call_context'] == "http://odahub.io/ontology#python3":
-        return run_python_function(w)
-
-def run_python_function(w):
-    try:
-        url, func = w['base']['location'].split("::")
-    except Exception as e:
-        raise Exception("can not split", w['base']['location'], e)
-
-    pars = ",".join(["%s=\"%s\""%(k,v) for k,v in w['inputs'].items()])
-
-    c = "curl %s  | awk 'END {print \"%s(%s)\"} 1' | python -"%(url, func, pars.replace("\"", "\\\"")) 
-    print(c)
-
-    try:
-        result = dict(stdout=subprocess.check_output(['bash', '-c', c], stderr=subprocess.STDOUT).decode())
-        status = 'success'
-    except Exception as e:
-        result = dict(stdout=e.output, exception=repr(e))
-        status = 'failed'
-
-    return dict(result=result, status=status)
-
 
 def listen(args):
     app.run(port=5555,debug=True,host=args.host,threaded=True)
-
-if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("queue",default="./queue")
-    parser.add_argument('-L', dest='listen',  help='...',action='store_true', default=False)
-    parser.add_argument('-H', dest='host',  help='...', default="0.0.0.0")
-    args=parser.parse_args()
-
-    listen(args)
+    

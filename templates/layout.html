@@ -15,7 +15,7 @@
     </style>
   </head>
   <body>
-    <div class="container">
+    <div class="container p-2">
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
           <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
             <div class="navbar-nav">
@@ -23,11 +23,13 @@
               <a class="nav-item nav-link" href="tests">Test Workflows</a>
               <a class="nav-item nav-link" href="goals">Test Goals</a>
               <a class="nav-item nav-link" href="add-test">Add Test</a>
+              <a class="nav-item nav-link" href="evaluate">Evaluate One</a>
+              <a class="nav-item nav-link" href="offer-goal">Offer Goal</a>
             </div>
           </div>
         </nav>
     </div>
-    <div class="container">
+    <div class="container p-3">
         <ul>
             {% for rs in request_stats %}
             <li><b>spent:</b> {{ rs.spent_seconds | round(4) }} seconds</li>
@@ -35,7 +37,7 @@
             {% endfor %}
         </ul>
     </div>
-    <div class="container">
+    <div class="container p-2">
       {% block content %}{% endblock %}
     </div>
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
