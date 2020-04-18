@@ -712,7 +712,7 @@ def evaluate(w, allow_run=True):
     else:
         
         if allow_run:
-            r = { 'origin':"run", **run(w)}
+            r = { 'origin':"run", **odarun.run(w)}
 
             store(w, r)
             return 'ran', r
