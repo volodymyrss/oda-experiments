@@ -244,7 +244,7 @@ def get_tests(f=None):
     return tests
 
 
-def get_goals(f=None):
+def design_goals(f=None):
     goals = []
     for test in get_tests(f):
         for bind, ex in test['expects'].items():
@@ -267,10 +267,10 @@ def get_goals(f=None):
 
     byuri={}
     for goal in tgoals:
-        goal_uri = w2uri(goal)
+        goal_uri = w2uri(goal, "goal")
         byuri[goal_uri] = goal
 
-        toinsert += "\n <{goal_uri}> a oda:workflow; a oda:testgoal .".format(goal_uri=goal_uri)
+        toinsert += "\n {goal_uri} a oda:workflow; a oda:testgoal .".format(goal_uri=goal_uri)
 
     print("toinsert", toinsert)
 
@@ -282,21 +282,49 @@ def get_goals(f=None):
 
     toinsert = ""
     for goal_uri in [r['goal_uri'] for r in bucketless]:
+        goal_uri = goal_uri.replace("http://ddahub.io/ontology/data#", "data:")
+
+        if goal_uri not in byuri: continue
+
         print("bucketless goal:", goal_uri)
 
         bucket = odakb.datalake.store(byuri[goal_uri])
 
-        toinsert += "\n <{goal_uri}> oda:bucket \"{bucket}\" .".format(goal_uri=goal_uri, bucket=bucket)
+        toinsert += "\n {goal_uri} oda:bucket \"{bucket}\" .".format(goal_uri=goal_uri, bucket=bucket)
 
     print("toinsert", len(toinsert))
     odakb.sparql.insert(toinsert)
 
+
     return tgoals
+    
+def get_goals(f="all"):
+    q = """
+            ?goal_uri a oda:testgoal .
+            """
+
+    if f == "reached":
+        q += """
+            ?goal_uri oda:equalTo ?data . 
+            ?data oda:bucket ?data_bucket . 
+            """
+    elif f == "unreached":
+        q += """
+             NOT EXISTS {
+                 ?goal_uri oda:equalTo ?data . 
+                 ?data oda:bucket ?data_bucket . 
+             }
+             """
+    
+    r = odakb.sparql.select(q)
+
+    return [ u['goal_uri'] for u in r ]
+
+
 
 @app.route('/goals')
 def goals_get(methods=["GET"]):
-    f = request.args.get('f', None)
-    f = "unreached" in request.args
+    f = request.args.get('f', "all")
 
     return jsonify(get_goals(f))
 
@@ -524,10 +552,16 @@ def offer_goal():
 
     r = []
 
-    for goal in get_goals(f):
-        goal_uri = w2uri(goal)
+    design_goals()
 
-            #return jsonify(goal)
+    for goal_uri in get_goals("unreached"):
+        #goal_uri = w2uri(goal)
+
+        print("goal to offer", goal_uri)
+
+        goal = get_data(goal_uri)
+
+        return jsonify(dict(goal_uri=goal_uri, goal=goal))
 
     return jsonify(dict(warning="no goals"))
 
@@ -549,7 +583,7 @@ def evaluate_one():
 
     r = []
 
-    for goal in get_goals(f)[skip:]:
+    for goal in get_goals("unreached")[skip:]:
         runtime_origin, value = evaluate(goal)
 
         if runtime_origin != "restored":
@@ -563,7 +597,7 @@ def evaluate_one():
         if len(r) >= n:
             break
 
-    return jsonify(r)
+    return jsonify(dict(goal_uri=w2uri(goal, "goal"), goal=r))
     #return make_response("deleted %i"%nentries)
 
 def list_data(f=None):
@@ -743,7 +777,16 @@ def viewdash():
 import jsonschema
 import json
 
-def evaluate(w, allow_run=True):
+from typing import Union
+from odakb.sparql import render_uri, nuri
+
+def evaluate(w: Union[str, dict], allow_run=True):
+    goal_uri = None
+    if isinstance(w, str):
+        goal_uri = w
+        b = odakb.sparql.select_one("{} oda:bucket ?b".format(render_uri(w)))['b']
+        w = odakb.datalake.restore(b)
+
     jsonschema.validate(w, json.loads(open("workflow-schema.json").read()))
 
     print("evaluate this", w)
@@ -758,27 +801,48 @@ def evaluate(w, allow_run=True):
         if allow_run:
             r = { 'origin':"run", **odarun.run(w)}
 
-            store(w, r)
+            s = store(w, r)
+        
+            if nuri(s['goal_uri']) != nuri(goal_uri):
+                print("stored goal uri", s['goal_uri'])
+                print("requested goal uri", goal_uri)
+                raise Exception("inconsistent storage")
+
             return 'ran', r
         else:
             return None
 
 
-def w2uri(w, namespace="data"):
-    return namespace+":w-"+hashlib.sha256(json.dumps(w).encode()).hexdigest()[:16]
+def w2uri(w, prefix="data"):
+    return "data:"+prefix+"-"+hashlib.sha256(json.dumps(w).encode()).hexdigest()[:16]
 
 def store(w, d):
     uri = w2uri(w)
+    goal_uri = w2uri(w, "goal")
 
     b = odakb.datalake.store(dict(data=d, workflow=w))
-    odakb.sparql.insert("%s oda:location oda:minioBucket"%(uri))
-    odakb.sparql.insert("%s oda:bucket \"%s\""%(uri, b))
-    odakb.sparql.insert("%s oda:curryingOf <%s>"%(uri, w['base']['workflow']))
-    odakb.sparql.insert("%s oda:test_status oda:%s"%(uri, d['status']))
+    s="""
+            {goal_uri} oda:equalTo {data_uri} .
+            {data_uri} oda:location oda:minioBucket;
+                       oda:bucket \"{bucket_name}\";
+                       oda:curryingOf <{base_workflow}>;
+                       oda:test_status oda:{status}""".format(
+                                data_uri=uri,
+                                goal_uri=goal_uri,
+                                base_workflow=w['base']['workflow'],
+                                bucket_name=b,
+                                status=d['status']
+                            )
+
+    print("created:", s)
+
+    odakb.sparql.insert(s)
 
     for k, v in w['inputs'].items():
         odakb.sparql.insert("%s oda:curryied_input_%s \"%s\""%(uri, k, v))
         odakb.sparql.insert("oda:curryied_input_%s a oda:curried_input"%(k))
+
+    return dict(goal_uri=goal_uri, uri=uri, bucket=b)
 
 def restore(w):
     uri = w2uri(w)
