@@ -8,6 +8,8 @@ import requests
 import hashlib
 import copy
 
+import rdflib
+
 import peewee
 import datetime
 import yaml
@@ -261,11 +263,40 @@ def get_goals(f=None):
         g['inputs']['timestamp'] = recent_timestamp()
         tgoals.append(g)
 
+    toinsert = ""
+
+    byuri={}
+    for goal in tgoals:
+        goal_uri = w2uri(goal)
+        byuri[goal_uri] = goal
+
+        toinsert += "\n <{goal_uri}> a oda:workflow; a oda:testgoal .".format(goal_uri=goal_uri)
+
+    print("toinsert", toinsert)
+
+    odakb.sparql.insert(toinsert)
+
+    bucketless = odakb.sparql.select("?goal_uri a oda:testgoal . NOT EXISTS { ?goal_uri oda:bucket ?b }", form="?goal_uri")
+
+    print(bucketless)
+
+    toinsert = ""
+    for goal_uri in [r['goal_uri'] for r in bucketless]:
+        print("bucketless goal:", goal_uri)
+
+        bucket = odakb.datalake.store(byuri[goal_uri])
+
+        toinsert += "\n <{goal_uri}> oda:bucket \"{bucket}\" .".format(goal_uri=goal_uri, bucket=bucket)
+
+    print("toinsert", len(toinsert))
+    odakb.sparql.insert(toinsert)
+
     return tgoals
 
 @app.route('/goals')
 def goals_get(methods=["GET"]):
     f = request.args.get('f', None)
+    f = "unreached" in request.args
 
     return jsonify(get_goals(f))
 
@@ -488,17 +519,15 @@ def recent_timestamp():
 
 @app.route('/offer-goal')
 def offer_goal():
-    skip = request.args.get('skip', 0, type=int)
     n = request.args.get('n', 1, type=int)
     f = request.args.get('f', None) 
 
     r = []
 
-    for goal in get_goals(f)[skip:]:
-        e = evaluate(goal, allow_run=False)
-            
-        if e is None:
-            return jsonify(goal)
+    for goal in get_goals(f):
+        goal_uri = w2uri(goal)
+
+            #return jsonify(goal)
 
     return jsonify(dict(warning="no goals"))
 
@@ -598,12 +627,14 @@ def get_data(uri):
     return b
 
 def get_graph(uri):
-    r = [ "{s} {p} {uri}".format(uri=uri, **l)
+    r =  [ "{s} {p} {uri}".format(uri=uri, **l)
            for l in odakb.sparql.select("?s ?p {}".format(odakb.sparql.render_uri(uri))) ]
     r += [ "{uri} {p} {o}".format(uri=uri, **l)
            for l in odakb.sparql.select("{} ?p ?o".format(odakb.sparql.render_uri(uri))) ]
     r += [ "{s} {uri} {o}".format(uri=uri, **l)
            for l in odakb.sparql.select("?s {} ?o".format(odakb.sparql.render_uri(uri))) ]
+
+    r = [" ".join([odakb.sparql.render_uri(u) for u in _r.split()]) for _r in r]
 
     return r
 
@@ -643,9 +674,22 @@ def viewworkflow():
 
 @app.route('/graph')
 def graph():
+    tojsonld = "jsonld" in request.args
+
     uri = request.args.get("uri")
     if uri:
-        return jsonify(get_graph(uri))
+        g = get_graph(uri)
+
+        print("graph for", uri, g)
+
+        if tojsonld:
+            G = rdflib.Graph().parse(data=odakb.sparql.tuple_list_to_turtle(g), format='turtle')
+
+            jsonld = G.serialize(format='json-ld', indent=4, sort_keys=True).decode()
+
+            return jsonify(json.loads(jsonld))
+        else:
+            return jsonify(g)
     else:
         return jsonify(dict(status="missing uri"))
 
@@ -720,8 +764,8 @@ def evaluate(w, allow_run=True):
             return None
 
 
-def w2uri(w):
-    return "data:w-"+hashlib.sha256(json.dumps(w).encode()).hexdigest()[:16]
+def w2uri(w, namespace="data"):
+    return namespace+":w-"+hashlib.sha256(json.dumps(w).encode()).hexdigest()[:16]
 
 def store(w, d):
     uri = w2uri(w)

@@ -3,7 +3,7 @@
   <head>
     <title>ODA Workflows View: Tests</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
     <link href="static/css/style.css" rel="stylesheet">
 
 
@@ -17,26 +17,37 @@
   <body>
     <div class="container p-2">
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
-          <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
             <div class="navbar-nav">
-              <a class="nav-item nav-link" href="view-data">Test Results</a>
+              <a class="nav-item nav-link active" href="view-data">Test Results</a>
               <a class="nav-item nav-link" href="tests">Test Workflows</a>
               <a class="nav-item nav-link" href="goals">Test Goals</a>
               <a class="nav-item nav-link" href="add-test">Add Test</a>
               <a class="nav-item nav-link" href="evaluate">Evaluate One</a>
               <a class="nav-item nav-link" href="offer-goal">Offer Goal</a>
             </div>
-          </div>
         </nav>
     </div>
+
     <div class="container p-3">
-        <ul>
-            {% for rs in request_stats %}
-            <li><b>spent:</b> {{ rs.spent_seconds | round(4) }} seconds</li>
-            <li><b>query size:</b> {{ rs.query_size }}</li>
-            {% endfor %}
-        </ul>
+    <div class="row">
+        <div class="col-sm">
+            <ul>
+                {% for rs in request_stats %}
+                <li><b>spent:</b> {{ rs.spent_seconds | round(4) }} seconds</li>
+                <li><b>query size:</b> {{ rs.query_size }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="col-sm">
+            This service implements standards discussed here <a href="https://doi.org/10.5281/zenodo.3560567">here</a>
+            and <a href="https://doi.org/10.5281/zenodo.3559528">here</a>.<br>
+            Source of the <a href="https://github.com/volodymyrss/oda-tests-deployment">deployment</a> and the <a href="https://github.com/volodymyrss/oda-tests">application</a>.
+        </div>
     </div>
+    </div>
+
+
     <div class="container p-2">
       {% block content %}{% endblock %}
     </div>

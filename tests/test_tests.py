@@ -30,7 +30,7 @@ def test_post(client):
   #  print(r, r.json)
 
 def test_testgoals(client):
-    r = client.get(url_for("goals_get"))
+    r = client.get(url_for("goals_get", unreached=True))
     print(r, r.json)
     
 
@@ -51,4 +51,12 @@ def test_get_testresults(client):
 
 def test_evaluate_one(client):
     r = client.get(url_for("evaluate_one"))
+    print(r, r.json)
+
+def test_graph(client):
+    r = client.get(url_for("graph", uri="http://odahub.io/ontology#test_lcpick_largebins"))
+    print(r, r.json)
+
+def test_graph_jsonld(client):
+    r = client.get(url_for("graph", uri="http://odahub.io/ontology#test_lcpick_largebins", jsonld=True))
     print(r, r.json)
