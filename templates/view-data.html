@@ -27,7 +27,7 @@
         {% set status_class = {'http://odahub.io/ontology#success': 'success', 'http://odahub.io/ontology#failed': 'danger' }[d.test_status] %}
         {% set status_message = {'http://odahub.io/ontology#success': 'SUCCESS', 'http://odahub.io/ontology#failed': 'FAIL' }[d.test_status] %}
         <tr>
-            <td><a href="data?uri={{d.uri | urlencode}}">{{d.uri.replace("http://odahub.io/datalake/minio#", "")}}<a href="graph?uri={{d.workflow | urlencode}}"><img class="button" src="static/img/rdf.svg"/></a></td>
+            <td><a href="data?uri={{d.uri | urlencode}}">{{d.uri.replace("http://ddahub.io/ontology/data#", "")}}<a href="graph?uri={{d.workflow | urlencode}}"><img class="button" src="static/img/rdf.svg"/></a></td>
             <td><a href="view-workflow?uri={{d.workflow | urlencode}}"> {{d.workflow.replace("http://odahub.io/ontology#", "")}}</a><a href="graph?uri={{d.workflow | urlencode}}"><img class="button" src="static/img/rdf.svg"/></a></td>
             <td>
                 {% for wd in  d.workflow_domains %}
@@ -58,8 +58,8 @@
             </td>
             <td>
                 <div class="span2">
-                    <button type="button" class="btn btn-xs btn-block btn-primary">Reschedule</button>
-                    <button type="button" class="btn btn-xs btn-block btn-danger">Expire</button>
+                    <button type="button" class="btn btn-sm btn-block btn-primary">Reschedule</button>
+                    <button type="button" class="btn btn-sm btn-block btn-danger">Expire</button>
                 </div>
             </td>
         </tr>

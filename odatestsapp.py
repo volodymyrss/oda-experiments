@@ -212,6 +212,10 @@ def add_basic_platform_test(uri, location, email):
                             email=email,
                          ))
 
+@app.route('/coming-soon', methods=["GET"])
+def coming_soon():
+    return "coming soon!"
+
 @app.route('/add-test', methods=["GET"])
 def add_test_form():
     return render_template("add-form.html")
