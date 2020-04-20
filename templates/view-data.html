@@ -19,6 +19,7 @@
        <th>Status</th>
        <th>Inputs</th>
        <th>Input Timestamp</th>
+       <th>Actions</th>
      </tr>
     </thead>
 
@@ -54,6 +55,12 @@
                 {% if d.timestamp %}
                     {{ d.timestamp }} ({{ d.timestamp_age_h | round(1)}} h ago)
                 {% endif %}
+            </td>
+            <td>
+                <div class="span2">
+                    <button type="button" class="btn btn-xs btn-block btn-primary">Reschedule</button>
+                    <button type="button" class="btn btn-xs btn-block btn-danger">Expire</button>
+                </div>
             </td>
         </tr>
     {% endfor %}

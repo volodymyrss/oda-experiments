@@ -3,6 +3,8 @@ from flask import render_template,make_response,request,jsonify
 
 import pprint
 
+from odaworkflow import validate_workflow, w2uri
+
 import requests
 
 import hashlib
@@ -26,6 +28,9 @@ from werkzeug.security import safe_str_cmp
 import odakb
 import odakb.sparql
 import odakb.datalake
+
+from odakb.sparql import init as rdf_init
+from odakb.sparql import nuri
 
 import os
 import time
@@ -63,6 +68,11 @@ users = [
 
 username_table = {u.username: u for u in users}
 userid_table = {u.id: u for u in users}
+
+
+def assertEqual(a, b, e=None):
+    if a != b:
+        raise Exception("%s != %s"%(a,b))
 
 def authenticate(username, password):
     user = username_table.get(username, None)
@@ -182,9 +192,10 @@ def tests_get():
     f = request.args.get("f", None)
     return jsonify(get_tests(f))
 
-def add_basic_platform_test(uri, location):
+def add_basic_platform_test(uri, location, email):
     assert uri
     assert location
+    assert email
 
     odakb.sparql.insert(query="""
                     {uri} oda:belongsTo oda:basic_testkit . 
@@ -194,9 +205,11 @@ def add_basic_platform_test(uri, location):
                     {uri} oda:callContext oda:python3 .
                     {uri} oda:location {location} .
                     {uri} oda:expects oda:input_cdciplatform .
+                    {uri} dc:contributor "{email}" .
                     """.format(
                             uri=odakb.sparql.render_uri(uri), 
-                            location=odakb.sparql.render_uri(location)
+                            location=odakb.sparql.render_uri(location),
+                            email=email,
                          ))
 
 @app.route('/add-test', methods=["GET"])
@@ -209,6 +222,7 @@ def tests_put():
     add_basic_platform_test(
                 request.args.get('uri'),
                 request.args.get('location'),
+                request.args.get('submitter_email'),
             )
     return jsonify(dict(status="ok"))
 
@@ -284,13 +298,20 @@ def design_goals(f=None):
     for goal_uri in [r['goal_uri'] for r in bucketless]:
         goal_uri = goal_uri.replace("http://ddahub.io/ontology/data#", "data:")
 
-        if goal_uri not in byuri: continue
+        if goal_uri not in byuri:
+            logging.warning("bucketless goal %s not currently designable: ignoring", goal_uri)
+            continue
 
         print("bucketless goal:", goal_uri)
 
         bucket = odakb.datalake.store(byuri[goal_uri])
 
+        assertEqual(nuri(w2uri(byuri[goal_uri], "goal")), nuri(goal_uri))
+
         toinsert += "\n {goal_uri} oda:bucket \"{bucket}\" .".format(goal_uri=goal_uri, bucket=bucket)
+
+#        reconstructed_goal = get_data(goal_uri)
+#        assert nuri(w2uri(reconstructed_goal, "goal")) == goal_uri
 
     print("toinsert", len(toinsert))
     odakb.sparql.insert(toinsert)
@@ -547,6 +568,8 @@ def recent_timestamp():
 
 @app.route('/offer-goal')
 def offer_goal():
+    rdf_init()
+
     n = request.args.get('n', 1, type=int)
     f = request.args.get('f', None) 
 
@@ -561,17 +584,25 @@ def offer_goal():
 
         goal = get_data(goal_uri)
 
+        assertEqual(nuri(goal_uri), nuri(w2uri(goal, "goal")))
+
+        print("offering goal", goal)
+        print("offering goal uri", goal_uri)
+
         return jsonify(dict(goal_uri=goal_uri, goal=goal))
 
     return jsonify(dict(warning="no goals"))
 
-@app.route('/report-goal')
+@app.route('/report-goal', methods=["POST"])
 def report_goal():
-    goal = request.args.get('goal')
-    data = request.args.get('data')
-    worker = request.args.get('worker')
+    d = request.json
+    goal = d.get('goal')
+    data = d.get('data')
+    worker = d.get('worker')
 
-    return jsonify()
+    r = store(goal, data)
+
+    return jsonify(r)
 
     #return make_response("deleted %i"%nentries)
 
@@ -813,8 +844,6 @@ def evaluate(w: Union[str, dict], allow_run=True):
             return None
 
 
-def w2uri(w, prefix="data"):
-    return "data:"+prefix+"-"+hashlib.sha256(json.dumps(w).encode()).hexdigest()[:16]
 
 def store(w, d):
     uri = w2uri(w)
@@ -834,7 +863,7 @@ def store(w, d):
                                 status=d['status']
                             )
 
-    print("created:", s)
+    print("created, to insert:", s)
 
     odakb.sparql.insert(s)
 
