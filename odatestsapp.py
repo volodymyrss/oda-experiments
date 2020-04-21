@@ -187,6 +187,16 @@ def tests_put():
             )
     return jsonify(dict(status="ok"))
 
+
+@app.route('/expire', methods=["PUT", "GET"])
+def expire_uri():
+    odakb.sparql.insert(
+                "{} oda:realm oda:expired".format(nuri(request.args.get('uri'))),
+            )
+    return jsonify(dict(status="ok"))
+
+
+
 def get_tests(f=None):
     tests=[]
 
@@ -197,6 +207,11 @@ def get_tests(f=None):
                           oda:callType ?call_type;
                           oda:callContext ?call_context;
                           oda:location ?location .
+                          
+                    OPTIONAL { ?workflow dc:contributor ?email }
+
+                    NOT EXISTS { ?workflow oda:realm oda:expired }
+
                     """ + (f or "")):
 
 

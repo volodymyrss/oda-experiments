@@ -19,6 +19,7 @@
        <th>Location</th>
        <th>Inputs</th>
        <th>Actions</th>
+       <th>Added by</th>
      </tr>
     </thead>
 
@@ -45,8 +46,12 @@
             </td>
             <td>
                 <div class="span2">
-                    <button type="button" class="btn btn-sm btn-block btn-danger">Expire</button>
+                    <button type="button" class="btn btn-sm btn-block btn-danger" 
+                                          onclick="$.get('expire?uri={{ d.workflow | urlencode }}', function (data) {alert(data); })">Expire</button>
                 </div>
+            </td>
+            <td>
+                <a href="mailto:{{ d.email }}"> {{ d.email }}  </a>
             </td>
         </tr>
     {% endfor %}
