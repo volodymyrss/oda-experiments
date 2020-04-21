@@ -532,7 +532,8 @@ def viewworkflows():
 
 @app.route('/graph')
 def graph():
-    tojsonld = "jsonld" in request.args
+    totable = "table" in request.args
+    tordf = "rdf" in request.args
 
     uri = request.args.get("uri")
     if uri:
@@ -540,14 +541,20 @@ def graph():
 
         print("graph for", uri, g)
 
-        if tojsonld:
+        if totable:
+            return jsonify(g)
+        elif tordf:
+            G = rdflib.Graph().parse(data=odakb.sparql.tuple_list_to_turtle(g), format='turtle')
+
+            rdf = G.serialize(format='turtle').decode()
+
+            return rdf, 200
+        else:
             G = rdflib.Graph().parse(data=odakb.sparql.tuple_list_to_turtle(g), format='turtle')
 
             jsonld = G.serialize(format='json-ld', indent=4, sort_keys=True).decode()
 
             return jsonify(json.loads(jsonld))
-        else:
-            return jsonify(g)
     else:
         return jsonify(dict(status="missing uri"))
 
