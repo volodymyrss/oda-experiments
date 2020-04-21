@@ -46,6 +46,8 @@
             </td>
             <td>
                 <div class="span2">
+                    <button type="button" class="btn btn-sm btn-block btn-primary" 
+                                          onclick="window.open('add-test?location={{ d.location | urlencode }}&uri={{ d.workflow | urlencode }}','_blank');">Copy</button>
                     <button type="button" class="btn btn-sm btn-block btn-danger" 
                                           onclick="$.get('expire?uri={{ d.workflow | urlencode }}', function (data) {alert(data); })">Expire</button>
                 </div>

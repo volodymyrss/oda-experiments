@@ -175,7 +175,10 @@ def coming_soon():
 
 @app.route('/add-test', methods=["GET"])
 def add_test_form():
-    return render_template("add-form.html")
+    return render_template("add-form.html",
+                uri=request.args.get('uri'),
+                location=request.args.get('location'),
+            )
 
 @app.route('/tests', methods=["PUT"])
 @app.route('/tests/add', methods=["GET"])
@@ -241,6 +244,7 @@ def get_tests(f=None):
 def design_goals(f=None):
     goals = []
     for test in get_tests(f):
+        logger.info("goal for test: %s", test)
         for bind, ex in test['expects'].items():
             for option in odakb.sparql.select('?opt a <%s>'%ex):
                 if not '#input_' in option['opt']:
@@ -266,13 +270,11 @@ def design_goals(f=None):
 
         toinsert += "\n {goal_uri} a oda:workflow; a oda:testgoal .".format(goal_uri=goal_uri)
 
-    print("toinsert", toinsert)
+    print("toinsert", toinsert[:300])
 
     odakb.sparql.insert(toinsert)
 
     bucketless = odakb.sparql.select("?goal_uri a oda:testgoal . NOT EXISTS { ?goal_uri oda:bucket ?b }", form="?goal_uri")
-
-    print(bucketless)
 
     toinsert = ""
     for goal_uri in [r['goal_uri'] for r in bucketless]:
@@ -302,6 +304,11 @@ def design_goals(f=None):
 def get_goals(f="all"):
     q = """
             ?goal_uri a oda:testgoal .
+
+            NOT EXISTS {
+                ?goal_uri oda:curryingOf ?w .
+                ?w oda:realm oda:expired .
+            }
             """
 
     if f == "reached":
@@ -325,6 +332,8 @@ def get_goals(f="all"):
 
 @app.route('/goals')
 def goals_get(methods=["GET"]):
+    odakb.sparql.reset_stats_collection()
+
     f = request.args.get('f', "all")
 
     return jsonify(get_goals(f))
@@ -366,7 +375,7 @@ def midnight_timestamp():
 
 def recent_timestamp():
     sind = datetime.datetime.now().timestamp() - midnight_timestamp()
-    return midnight_timestamp() + int(sind/600)*600
+    return midnight_timestamp() + int(sind/3600)*3600
 
 @app.route('/offer-goal')
 def offer_goal():
@@ -446,8 +455,8 @@ def list_data(f=None):
                       oda:domain ?workflow_domains;
                       oda:belongsTo oda:basic_testkit .
 
-            NOT EXISTS { ?data oda:realm oda:expired }
                       """+(f or ""))
+     #       NOT EXISTS { ?data oda:realm oda:expired }
 
 
     bydata = defaultdict(list)
