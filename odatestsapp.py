@@ -519,7 +519,8 @@ def get_graph(uri):
     r += [ "{s} {uri} {o}".format(uri=uri, **l)
            for l in odakb.sparql.select("?s {} ?o".format(odakb.sparql.render_uri(uri))) ]
 
-    r = [" ".join([odakb.sparql.render_uri(u) for u in _r.split()]) for _r in r]
+    r = map(odakb.sparql.render_rdf, r)
+    #r = [" ".join([odakb.sparql.render_uri(u) for u in _r.split(None, 2)]) for _r in r]
 
     return r
 
@@ -542,7 +543,7 @@ def describe_workflow(uri):
     return w
 
 def list_features():
-    fs = json.loads(odakb.sparql.select("""
+    fs = odakb.sparql.select("""
                 ?ft a oda:feature;
                     oda:descr ?descr;
                     oda:provenBy ?w;
@@ -551,7 +552,7 @@ def list_features():
                 ?w a oda:test .
 
                 NOT EXISTS { ?w oda:realm oda:expired }
-            """, "?ft ?p ?o", tojson=True))
+            """, "?ft ?p ?o", tojdict=True)
 
     return fs
 

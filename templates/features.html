@@ -14,20 +14,20 @@
     <thead class="thead">
      <tr>
        <th>URI</th>
-       <th>Domains</th>
-       <th>Call Type</th>
-       <th>Location</th>
-       <th>Inputs</th>
-       <th>Actions</th>
-       <th>Added by</th>
+       <th>Short description</th>
+       <th>Proven By</th>
      </tr>
     </thead>
 
-    {% for f in features %}
+    {% for fn, f in features.items() %}
         <tr>
-            <td>{{ f }}</td>
-            <td>{{ f["$id"] }}</td>
-            <td>{{ f["http://odahub.io/ontology#descr"][0]["@value"] }}</td>
+            <td>{{ f["@id"] | uri | safe}}</td>
+            <td>{{ f["oda:descr"][0] }}</td>
+            <td>
+                {% for pb, pbd in f["oda:provenBy"].items() %}
+                    <a href="workflow?uri={{ pbd["@id"] | urlencode }}">{{ pb }}</a>
+                {% endfor %}
+            </td>
         </tr>
     {% endfor %}
 
