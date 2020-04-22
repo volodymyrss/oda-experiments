@@ -459,8 +459,11 @@ def list_data(f=None):
             ?input_binding a oda:curried_input .
 
             ?workflow a oda:test; 
-                      oda:domain ?workflow_domains;
                       oda:belongsTo oda:basic_testkit .
+
+            OPTIONAL {
+                ?workflow oda:domain ?workflow_domains 
+            }
 
             NOT EXISTS { ?data oda:realm oda:expired }
             NOT EXISTS { ?workflow oda:realm oda:expired }
@@ -485,7 +488,7 @@ def list_data(f=None):
             R[common_key] = l[0]
         
         for joined_key in "workflow_domains",:
-            l = [ve[joined_key] for ve in v]
+            l = [ve[joined_key] for ve in v if joined_key in ve]
             R[joined_key] = list(set(l))
              
         R['inputs'] = {}
@@ -633,7 +636,7 @@ def viewdata():
     request_stats = odakb.sparql.query_stats
 
     if len(d)>0:
-        domains = set(functools.reduce(lambda x,y:x+y, [R['workflow_domains'] for R in d]))
+        domains = set(functools.reduce(lambda x,y:x+y, [R.get('workflow_domains', []) for R in d]))
     else:
         domains = []
 

@@ -24,7 +24,7 @@ def cli():
 
 
 @cli.command()
-@click.option("-u", "--url", default="http://in.internal.odahub.io")
+@click.option("-u", "--url", default="http://in.internal.odahub.io/odatests")
 @click.option("-1", "--one-shot", is_flag=True, default=False)
 @click.option("-n", "--dry-run", is_flag=True, default=False)
 def worker(url, dry_run, one_shot):
