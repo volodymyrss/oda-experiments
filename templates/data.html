@@ -3,7 +3,7 @@
 
     <div class="container p-3">
     {% for wd in domains %}
-        <a href="view-data?f={{ ("?workflow oda:domain <"+wd+">") | urlencode }}">
+        <a href="data?f={{ ("?workflow oda:domain <"+wd+">") | urlencode }}">
         {{ wd.replace("http://odahub.io/ontology", "") }} 
         </a>
     {% endfor %}
@@ -28,10 +28,10 @@
         {% set status_message = {'http://odahub.io/ontology#success': 'SUCCESS', 'http://odahub.io/ontology#failed': 'FAIL' }[d.test_status] %}
         <tr>
             <td><a href="data?uri={{d.uri | urlencode}}">{{d.uri.replace("http://ddahub.io/ontology/data#", "")}}<a href="graph?uri={{d.workflow | urlencode}}"><img class="button" src="static/img/rdf.svg"/></a></td>
-            <td><a href="view-workflow?uri={{d.workflow | urlencode}}"> {{d.workflow.replace("http://odahub.io/ontology#", "")}}</a><a href="graph?uri={{d.workflow | urlencode}}"><img class="button" src="static/img/rdf.svg"/></a></td>
+            <td><a href="workflow?uri={{d.workflow | urlencode}}"> {{d.workflow.replace("http://odahub.io/ontology#", "")}}</a><a href="graph?uri={{d.workflow | urlencode}}"><img class="button" src="static/img/rdf.svg"/></a></td>
             <td>
                 {% for wd in  d.workflow_domains %}
-                    <a href="view-data?f={{ ("?workflow oda:domain <"+wd+">") | urlencode }}">
+                    <a href="data?f={{ ("?workflow oda:domain <"+wd+">") | urlencode }}">
                     {{ wd.replace("http://odahub.io/ontology", "") }} 
                     </a>
                 {% endfor %}

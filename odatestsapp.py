@@ -102,10 +102,10 @@ n_failed_retries = int(os.environ.get('DQUEUE_FAILED_N_RETRY','20'))
 
 logger=logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-handler=logging.StreamHandler()
-logger.addHandler(handler)
-formatter = logging.Formatter('%(asctime)s %(levelname)8s %(name)s | %(message)s')
-handler.setFormatter(formatter)
+#handler=logging.StreamHandler()
+#logger.addHandler(handler)
+#formatter = logging.Formatter('%(asctime)s %(levelname)8s %(name)s | %(message)s')
+#handler.setFormatter(formatter)
 
 def log(*args,**kwargs):
     severity=kwargs.get('severity','warning').upper()
@@ -207,18 +207,19 @@ def get_tests(f=None):
     tests=[]
 
     for t in odakb.sparql.select(query="""
-                    ?workflow oda:belongsTo oda:basic_testkit; 
-                          a oda:test;
-                          a oda:workflow;
-                          oda:callType ?call_type;
-                          oda:callContext ?call_context;
-                          oda:location ?location .
-                          
-                    OPTIONAL { ?workflow dc:contributor ?email }
+                        ?workflow oda:belongsTo oda:basic_testkit; 
+                              a oda:test;
+                              a oda:workflow;
+                              oda:callType ?call_type;
+                              oda:callContext ?call_context;
+                              oda:location ?location .
+                              
+                        OPTIONAL { ?workflow dc:contributor ?email }
 
-                    NOT EXISTS { ?workflow oda:realm oda:expired }
+                        NOT EXISTS { ?workflow oda:realm oda:expired }
 
                     """ + (f or "")):
+        logger.info("selected workflow entry: %s", t)
 
 
         t['domains'] = odakb.sparql.select(query="""
@@ -540,27 +541,52 @@ def describe_workflow(uri):
 
     return w
 
+def list_features():
+    fs = json.loads(odakb.sparql.select("""
+                ?ft a oda:feature;
+                    oda:descr ?descr;
+                    oda:provenBy ?w;
+                    ?p ?o .
+
+                ?w a oda:test .
+
+                NOT EXISTS { ?w oda:realm oda:expired }
+            """, "?ft ?p ?o", tojson=True))
+
+    return fs
+
+@app.route('/features')
+def features():
+    fs = list_features()
+
+    if 'json' in request.args:
+        return jsonify(fs)
+
+    return render_template("features.html", features=fs)
+
 @app.route('/workflow')
 def workflow():
     uri = request.args.get("uri")
+
+    if 'json' in request.args:
+        if uri:
+            return jsonify(describe_workflow(uri))
+        else:
+            return jsonify(dict(status="missing uri"))
+
     if uri:
-        return jsonify(describe_workflow(uri))
+        return render_template("workflow.html", w=describe_workflow(uri))
     else:
         return jsonify(dict(status="missing uri"))
 
-@app.route('/view-workflow')
-def viewworkflow():
-    uri = request.args.get("uri")
-    if uri:
-        return render_template("view-workflow.html", w=describe_workflow(uri))
-    else:
-        return jsonify(dict(status="missing uri"))
-
-@app.route('/view-workflows')
-def viewworkflows():
+@app.route('/workflows')
+def workflows():
     workflows = get_tests()
 
-    return render_template("view-workflows.html", data=workflows)
+    if 'json' in request.args:
+        return jsonify(workflows)
+    else:
+        return render_template("workflows.html", data=workflows)
 
 @app.route('/graph')
 def graph():
@@ -591,15 +617,14 @@ def graph():
         return jsonify(dict(status="missing uri"))
 
 @app.route('/data')
-def data():
-    uri = request.args.get("uri")
-    if uri:
-        return jsonify(get_data(uri))
-    else:
-        return jsonify(list_data())
-
-@app.route('/view-data')
 def viewdata():
+    if 'json' in request.args:
+        uri = request.args.get("uri")
+        if uri:
+            return jsonify(get_data(uri))
+        else:
+            return jsonify(list_data())
+
     f = request.args.get("f", None)
 
     odakb.sparql.reset_stats_collection()
@@ -611,7 +636,7 @@ def viewdata():
     else:
         domains = []
 
-    r = render_template('view-data.html', 
+    r = render_template('data.html', 
                 domains=domains,
                 data=d, 
                 request_stats=request_stats,
