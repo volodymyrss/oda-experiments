@@ -149,7 +149,7 @@ def tests_get():
     f = request.args.get("f", None)
     return jsonify(get_tests(f))
 
-def add_basic_platform_test(uri, location, email):
+def add_basic_platform_test(uri, location, email, extra):
     assert uri
     assert location
     assert email
@@ -163,10 +163,12 @@ def add_basic_platform_test(uri, location, email):
                     {uri} oda:location {location} .
                     {uri} oda:expects oda:input_cdciplatform .
                     {uri} dc:contributor "{email}" .
+                    {extra_rdf}
                     """.format(
                             uri=odakb.sparql.render_uri(uri), 
                             location=odakb.sparql.render_uri(location),
                             email=email,
+                            extra_rdf=extra,
                          ))
 
 @app.route('/coming-soon', methods=["GET"])
@@ -187,6 +189,7 @@ def tests_put():
                 request.args.get('uri'),
                 request.args.get('location'),
                 request.args.get('submitter_email'),
+                request.args.get('extra_rdf'),
             )
     return jsonify(dict(status="ok"))
 
@@ -336,6 +339,9 @@ def goals_get(methods=["GET"]):
 
     f = request.args.get('f', "all")
 
+    if 'design' in request.args:
+        design_goals()
+
     return jsonify(get_goals(f))
 
 @app.route('/test-results')
@@ -455,8 +461,10 @@ def list_data(f=None):
                       oda:domain ?workflow_domains;
                       oda:belongsTo oda:basic_testkit .
 
+            NOT EXISTS { ?data oda:realm oda:expired }
+            NOT EXISTS { ?workflow oda:realm oda:expired }
+
                       """+(f or ""))
-     #       NOT EXISTS { ?data oda:realm oda:expired }
 
 
     bydata = defaultdict(list)
