@@ -622,12 +622,12 @@ def graph():
 
 @app.route('/data')
 def viewdata():
+    uri = request.args.get("uri")
+    if uri:
+        return jsonify(get_data(uri))
+
     if 'json' in request.args:
-        uri = request.args.get("uri")
-        if uri:
-            return jsonify(get_data(uri))
-        else:
-            return jsonify(list_data())
+        return jsonify(list_data())
 
     f = request.args.get("f", None)
 

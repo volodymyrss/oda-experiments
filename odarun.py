@@ -1,4 +1,8 @@
 import subprocess
+import requests
+
+import os
+import re
 
 def run(w):
     print("run this", w)
@@ -15,14 +19,72 @@ def run_python_function(w):
 
     pars = ",".join(["%s=\"%s\""%(k,v) for k,v in w['inputs'].items()])
 
-    c = "curl %s  | awk 'END {print \"%s(%s)\"} 1' | python -"%(url, func, pars.replace("\"", "\\\"")) 
-    print(c)
+    import subprocess
 
-    try:
-        result = dict(stdout=subprocess.check_output(['bash', '-c', c], stderr=subprocess.STDOUT).decode())
+    if re.match("https://raw.githubusercontent.com/volodymyrss/oda_test_kit/+[0-9a-z]+?/test_[a-z0-9]+?.py", url):
+        print("found valid url", url)
+    else:
+        raise Exception("invalid url: %s!"%url)
+    
+    if re.match("test_[a-z0-9]+?", func):
+        print("found valid func:", func)
+    else:
+        raise Exception("invalid func: %s!"%func)
+
+
+    urls = [
+            url.replace("https://raw.githubusercontent.com/volodymyrss/oda_test_kit/", 
+                        "https://gitlab.astro.unige.ch/savchenk/osa_test_kit/raw/"
+                        ),
+            url,
+            ]
+
+    
+    r = None
+    for url in urls:
+        print("fetching url option %s ..."%url)
+        r = requests.get(url)
+
+        if r.status_code == 200:
+            break
+        else:
+            print("unable to reach url %s: %s"%(url, r))
+
+    if r is None:
+        raise Exception("all urls failed!")
+
+    c = r.text
+    c += "\n\n%s(%s)"%(func, pars)
+
+    print("calling python with:\n", "\n>".join(c.split("\n")))
+
+    p = subprocess.Popen(["python"], 
+                            stdin=subprocess.PIPE, 
+                            stdout=subprocess.PIPE, 
+                            stderr=subprocess.STDOUT, 
+                            env={**os.environ, "PYTHONUNBUFFERED":"1"},
+                            bufsize=0)
+
+    p.stdin.write(c.encode())
+
+    p.stdin.close()
+
+    stdout = ""
+    for l in p.stdout:
+        print("> ", l.decode().strip())
+        stdout += l.decode()
+    
+    p.wait()
+
+    print("exited as ", p.returncode)
+
+    
+    if p.returncode == 0:
+        result = dict(stdout=stdout)
         status = 'success'
-    except Exception as e:
-        result = dict(stdout=e.output.decode(), exception=repr(e))
+    else:
+        result = dict(stdout=stdout, exception=p.returncode)
         status = 'failed'
+
 
     return dict(result=result, status=status)
