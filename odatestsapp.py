@@ -382,7 +382,7 @@ def midnight_timestamp():
 
 def recent_timestamp():
     sind = datetime.datetime.now().timestamp() - midnight_timestamp()
-    return midnight_timestamp() + int(sind/3600)*3600
+    return midnight_timestamp() + int(sind/36000)*36000
 
 @app.route('/offer-goal')
 def offer_goal():
