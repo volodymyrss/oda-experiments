@@ -665,7 +665,11 @@ def uri(uri):
 
 @app.template_filter()
 def locurl(uri):
-    url, anc = uri.split("::")
+    if "::" in uri:
+        url, anc = uri.split("::")
+    else:
+        url, anc = uri, ""
+
     commit, fn = url.split("/")[-2:]
     surl = commit[:8]+"/"+fn
 
