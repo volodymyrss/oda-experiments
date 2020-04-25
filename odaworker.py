@@ -34,7 +34,7 @@ def worker(url, dry_run, one_shot):
 
     while True:
         t0 = time.time()
-        r = requests.get(url+"/offer-goal", skip=nskip)
+        r = requests.get(url+"/offer-goal", params=dict(skip=nskip))
         logger.info("query took %.2lg seconds", time.time() - t0)
 
         if r.status_code != 200:
@@ -47,6 +47,7 @@ def worker(url, dry_run, one_shot):
         if goal is None:
             logger.warning("no more goals! sleeping")
             time.sleep(15)
+            nskip=0
             continue
 
         goal_uri = r.json()['goal_uri']

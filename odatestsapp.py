@@ -425,7 +425,10 @@ def offer_goal():
 
     design_goals()
 
-    for goal_uri in get_goals("unreached", wf=f):
+    unreached_goals = get_goals("unreached", wf=f)
+
+    if len(unreached_goals) > n:
+        goal_uri = unreached_goals[n]
         #goal_uri = w2uri(goal)
 
         print("goal to offer", goal_uri)
@@ -438,8 +441,8 @@ def offer_goal():
         print("offering goal uri", goal_uri)
 
         return jsonify(dict(goal_uri=goal_uri, goal=goal))
-
-    return jsonify(dict(warning="no goals"))
+    else:
+        return jsonify(dict(warning="no goals"))
 
 @app.route('/report-goal', methods=["POST"])
 def report_goal():
