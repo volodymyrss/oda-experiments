@@ -34,13 +34,14 @@ def worker(url, dry_run, one_shot):
 
     while True:
         t0 = time.time()
-        r = requests.get(url+"/offer-goal", params=dict(skip=nskip))
+        r = requests.get(url+"/offer-goal", params=dict(n=nskip))
         logger.info("query took %.2lg seconds", time.time() - t0)
 
         if r.status_code != 200:
             logger.error("problem fetching goal: %s", r)
             print(r.text)
-            return
+            time.sleep(15)
+            continue
 
         goal = r.json().get('goal', None)
 
