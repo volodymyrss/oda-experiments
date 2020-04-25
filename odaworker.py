@@ -30,9 +30,11 @@ def cli():
 def worker(url, dry_run, one_shot):
     rdf_init()
 
+    nskip=0
+
     while True:
         t0 = time.time()
-        r = requests.get(url+"/offer-goal")
+        r = requests.get(url+"/offer-goal", skip=nskip)
         logger.info("query took %.2lg seconds", time.time() - t0)
 
         if r.status_code != 200:
@@ -41,6 +43,7 @@ def worker(url, dry_run, one_shot):
             return
 
         goal = r.json().get('goal', None)
+
         if goal is None:
             logger.warning("no more goals! sleeping")
             time.sleep(15)
@@ -56,8 +59,12 @@ def worker(url, dry_run, one_shot):
         if nuri(w2uri(goal, "goal")) != nuri(goal_uri):
             raise Exception("goal uri mismatch:", nuri(w2uri(goal, "goal")), nuri(goal_uri))
 
-
-        data = odarun.run(goal)
+        try:
+            data = odarun.run(goal)
+            nskip=0
+        except odarun.UnsupportedCallType:
+            nskip+=1
+            logger.error("has been offerred unsupported call type! we must have made wrong request; skipping to %i", nskip)
 
         worker = dict(hostname=socket.gethostname(), time=time.time())
         

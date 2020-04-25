@@ -4,12 +4,17 @@ import requests
 import os
 import re
 
+class UnsupportedCallType(Exception):
+    pass
+
 def run(w):
     print("run this", w)
 
     if w['base']['call_type'] == "http://odahub.io/ontology#python_function" \
-       and w['base']['call_context'] == "http://odahub.io/ontology#python3":
-        return run_python_function(w)
+        and w['base']['call_context'] == "http://odahub.io/ontology#python3":
+            return run_python_function(w)
+
+    raise UnsupportedCallType("unable to run this calltype:", w['base']['call_type'])
 
 def run_python_function(w):
     try:
