@@ -1,4 +1,5 @@
 from flask import url_for
+import pytest
 
 def test_status(client):
     r = client.get("/status")
@@ -101,4 +102,32 @@ def test_graph(client):
 def test_graph_jsonld(client):
     r = client.get(url_for("graph", uri="http://odahub.io/ontology#test_lcpick_largebins", jsonld=True))
     print(r, r.json)
+
+def test_wf_goal(client):
+    g = client.get(url_for("offer_goal")).json
+
+    g_pf = client.get(url_for("offer_goal", f="?w oda:callType oda:python_function")).json
+    
+
+    g_nb = client.get(url_for("offer_goal", f="?w oda:callType oda:jupyter_notebook")).json
+    
+    print()
+    print("regular goal:", g)
+    print("pf goal:", g_pf)
+    print("nb goal:", g_nb)
+
+def test_badrequest(client):
+    r = client.get(url_for("offer_goal", f="oda:callType oda:jupyter_notebook"))
+
+    assert r.status_code == 400
+
+    print(r)
+
+@pytest.mark.skip()
+def test_unexpected(client):
+    r = client.get(url_for("testerror"))
+
+    assert r.status_code == 500
+
+    print(r)
 

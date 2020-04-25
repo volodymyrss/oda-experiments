@@ -144,6 +144,26 @@ def create_app():
 
 app = create_app()
 
+class BadRequest(Exception):
+    pass
+
+@app.errorhandler(BadRequest)
+def handle_error(error):
+    return make_response(str(error)), 400
+
+@app.errorhandler(Exception)
+def handle_error(error):
+    raise error
+    return make_response("Unexpected error. I am not sure how you made this happen, but I thank you for spotting this issue, I dealing with it! If you want to keep in touch, please share your email"), 500
+
+@app.route("/status")
+def status():
+    return make_response("status is ok")
+
+@app.route("/test-error")
+def testerror():
+    raise Exception("test error")
+
 @app.route('/tests', methods=["GET"])
 def tests_get():
     f = request.args.get("f", None)
@@ -262,7 +282,7 @@ def design_goals(f=None):
         tgoals.append(g)
 
         g = copy.deepcopy(_g)
-        g['inputs']['timestamp'] = recent_timestamp()
+        g['inputs']['timestamp'] = recent_timestamp(6000)
         tgoals.append(g)
 
     toinsert = ""
@@ -272,7 +292,10 @@ def design_goals(f=None):
         goal_uri = w2uri(goal, "goal")
         byuri[goal_uri] = goal
 
-        toinsert += "\n {goal_uri} a oda:workflow; a oda:testgoal .".format(goal_uri=goal_uri)
+        toinsert += "\n {goal_uri} a oda:workflow; a oda:testgoal; oda:curryingOf {base_uri} .".format(
+                    goal_uri=goal_uri,
+                    base_uri=nuri(goal['base']['workflow']),
+                )
 
     print("toinsert", toinsert[:300])
 
@@ -305,13 +328,13 @@ def design_goals(f=None):
 
     return tgoals
     
-def get_goals(f="all"):
+def get_goals(f="all", wf=None):
     q = """
             ?goal_uri a oda:testgoal .
 
             NOT EXISTS {
-                ?goal_uri oda:curryingOf ?w .
-                ?w oda:realm oda:expired .
+                ?goal_uri oda:curryingOf ?W .
+                ?W oda:realm oda:expired .
             }
             """
 
@@ -327,6 +350,13 @@ def get_goals(f="all"):
                  ?data oda:bucket ?data_bucket . 
              }
              """
+
+    if wf is not None:
+        if '?w' not in wf:
+            raise BadRequest("workflow filter does not contain \"?w\" workflow variable")
+
+        q += "?goal_uri oda:curryingOf ?w ."
+        q += wf
     
     r = odakb.sparql.select(q)
 
@@ -380,9 +410,9 @@ def midnight_timestamp():
     now = datetime.datetime.now()
     return datetime.datetime(now.year, now.month, now.day).timestamp()
 
-def recent_timestamp():
+def recent_timestamp(waittime):
     sind = datetime.datetime.now().timestamp() - midnight_timestamp()
-    return midnight_timestamp() + int(sind/10800)*10800
+    return midnight_timestamp() + int(sind/waittime)*waittime
 
 @app.route('/offer-goal')
 def offer_goal():
@@ -395,7 +425,7 @@ def offer_goal():
 
     design_goals()
 
-    for goal_uri in get_goals("unreached"):
+    for goal_uri in get_goals("unreached", wf=f):
         #goal_uri = w2uri(goal)
 
         print("goal to offer", goal_uri)
@@ -713,6 +743,8 @@ def evaluate(w: Union[str, dict], allow_run=True):
 def store(w, d):
     uri = w2uri(w)
     goal_uri = w2uri(w, "goal")
+
+    print("storing", d)
 
     b = odakb.datalake.store(dict(data=d, workflow=w))
     s="""
