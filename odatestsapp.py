@@ -369,7 +369,7 @@ def get_goals(f="all", wf=None):
 
 @app.route('/goals')
 def goals_get(methods=["GET"]):
-    #odakb.sparql.reset_stats_collection()
+    odakb.sparql.query_stats = None
 
     f = request.args.get('f', "all")
 
