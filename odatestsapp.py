@@ -48,6 +48,9 @@ import json
 
 from typing import Union
 from odakb.sparql import render_uri, nuri
+import odakb.sparql 
+
+odakb.sparql.stop_stats_collection()
 
 import pymysql
 import peewee
@@ -366,7 +369,7 @@ def get_goals(f="all", wf=None):
 
 @app.route('/goals')
 def goals_get(methods=["GET"]):
-    odakb.sparql.reset_stats_collection()
+    #odakb.sparql.reset_stats_collection()
 
     f = request.args.get('f', "all")
 
@@ -667,6 +670,7 @@ def viewdata():
     odakb.sparql.reset_stats_collection()
     d = list_data(f)
     request_stats = odakb.sparql.query_stats
+    odakb.sparql.stop_stats_collection()
 
     if len(d)>0:
         domains = set(functools.reduce(lambda x,y:x+y, [R.get('workflow_domains', []) for R in d]))
@@ -681,7 +685,6 @@ def viewdata():
             )
 
 
-    odakb.sparql.reset_stats_collection()
 
     return r
 
