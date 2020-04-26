@@ -25,7 +25,7 @@
 
     {% for d in data %}
         <tr>
-            <td>{{ d.workflow | uri | safe }}</td>
+            <td>{{ d.workflow | uri("workflow") | safe }}</td>
             <td>
                 {% for dm in d.domains %}
                     {{ dm.domain | uri | safe}}

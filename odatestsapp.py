@@ -694,10 +694,15 @@ def viewdash():
     return r
 
 @app.template_filter()
-def uri(uri):
+def uri(uri, showwith=None):
     suri = uri.replace("http://odahub.io/ontology#", "oda:")
 
-    return '<a href="graph?uri={}">{}</a>'.format(quote_plus(uri), suri)
+    if showwith is None:
+        return '<a href="graph?uri={quri}">{suri}</a>'.format(quri=quote_plus(uri), suri=suri)
+    else:
+        return '''<a href="{showwith}?uri={quri}">{suri}</a>
+                  <a href="graph?uri={quri}"><img class="button" src="static/img/rdf.svg"/></a>
+               '''.format(quri=quote_plus(uri), suri=suri, showwith=showwith)
 
 @app.template_filter()
 def locurl(uri):
