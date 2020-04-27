@@ -696,6 +696,7 @@ def viewdash():
 @app.template_filter()
 def uri(uri, showwith=None):
     suri = uri.replace("http://odahub.io/ontology#", "oda:")
+    suri = suri.replace("http://ddahub.io/ontology/data#", "data:")
 
     if showwith is None:
         return '<a href="graph?uri={quri}">{suri}</a>'.format(quri=quote_plus(uri), suri=suri)

@@ -34,7 +34,7 @@ def worker(url, dry_run, one_shot):
 
     while True:
         t0 = time.time()
-        r = requests.get(url+"/offer-goal", params=dict(n=nskip))
+        r = requests.get(url+"/offer-goal", params=dict(n=nskip, f='?w oda:callType oda:python_function'))
         logger.info("query took %.2lg seconds", time.time() - t0)
 
         if r.status_code != 200:

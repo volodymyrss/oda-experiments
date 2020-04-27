@@ -1,5 +1,6 @@
 import subprocess
 import requests
+import time
 
 import os
 import re
@@ -23,6 +24,22 @@ def run_python_function(w):
         raise Exception("can not split", w['base']['location'], e)
 
     pars = ",".join(["%s=\"%s\""%(k,v) for k,v in w['inputs'].items()])
+
+    time_constrain = None
+
+    for k,v in w['inputs'].items():
+        if 'timestamp' in k:
+            time_constrain = float(v)
+
+    if time_constrain is not None:
+        if time_constrain < time.time() - 7200:
+            print("time-constrained goal obsolete!")
+
+            result = dict(stdout='')
+            status = 'obsolete'
+
+            return dict(result=result, status=status)
+
 
     import subprocess
 
