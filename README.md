@@ -10,4 +10,6 @@
 * workflows without inputs can be executed by the relevant execution workflows
 * workers are declaring ability to execute some execution workflows, fetching and 
 
+The tests are used to derive available _platform features_.
+
 Described [here](https://doi.org/10.5281/zenodo.3560567) and [here](https://doi.org/10.5281/zenodo.3559528).
