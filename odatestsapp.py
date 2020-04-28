@@ -686,8 +686,8 @@ def log_request():
                     'args': dict(request.args),
                     'json-data': dict(request.json or {}),
                     'form-data': dict(request.form or {}),
-                    'raw-data': dict(request.data or ""),
                 }}
+                    
 
     try:
         request_summary['clientip']=request_summary['request-data']['headers']['X-Forwarded-For'].split(",")[0]

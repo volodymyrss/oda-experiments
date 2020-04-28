@@ -40,14 +40,14 @@ def worker(url, dry_run, one_shot):
         if r.status_code != 200:
             logger.error("problem fetching goal: %s", r)
             print(r.text)
-            time.sleep(15)
+            time.sleep(35)
             continue
 
         goal = r.json().get('goal', None)
 
         if goal is None:
             logger.warning("no more goals! sleeping")
-            time.sleep(15)
+            time.sleep(35)
             nskip=0
             continue
 
@@ -67,7 +67,7 @@ def worker(url, dry_run, one_shot):
         except odarun.UnsupportedCallType:
             nskip+=1
             logger.error("has been offerred unsupported call type! we must have made wrong request; skipping to %i", nskip)
-            time.sleep(15)
+            time.sleep(35)
             continue
 
         worker = dict(hostname=socket.gethostname(), time=time.time())
@@ -83,7 +83,7 @@ def worker(url, dry_run, one_shot):
                     break
                 except Exception as e:
                     print("failed to report:", e,"retrying")
-                    time.sleep(10)
+                    time.sleep(30)
 
         else:
             print("dry run, not reporting")
@@ -91,7 +91,7 @@ def worker(url, dry_run, one_shot):
         if one_shot:
             break
 
-        time.sleep(15)
+        time.sleep(35)
 
 if __name__ == "__main__":
     cli()
