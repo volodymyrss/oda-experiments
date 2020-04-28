@@ -1,5 +1,5 @@
 from flask import Flask
-from flask import render_template,make_response,request,jsonify, send_from_directory
+from flask import render_template,make_response,request,jsonify, send_from_directory, url_for
 
 import pprint
 
@@ -661,8 +661,9 @@ def graph():
 import pylogstash
 log_stasher = pylogstash.LogStasher()
 
-def log_request():
+def log_request(url=""):
     request_summary = {'origin': 'odatests',
+                 'url': url_for(request.endpoint),
                  'request-data': {
                     'headers': dict(request.headers),
                     'host_url': request.host_url,
