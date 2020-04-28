@@ -163,6 +163,7 @@ def handle_error(error):
 
 @app.route("/status")
 def status():
+    log_request()
     return make_response("status is ok")
 
 @app.route("/test-error")
@@ -171,6 +172,7 @@ def testerror():
 
 @app.route('/tests', methods=["GET"])
 def tests_get():
+    log_request()
     f = request.args.get("f", None)
     return jsonify(get_tests(f))
 
@@ -198,10 +200,12 @@ def add_basic_platform_test(uri, location, email, extra):
 
 @app.route('/coming-soon', methods=["GET"])
 def coming_soon():
+    log_request()
     return "coming soon!"
 
 @app.route('/add-test', methods=["GET"])
 def add_test_form():
+    log_request()
     return render_template("add-form.html",
                 uri=request.args.get('uri'),
                 location=request.args.get('location'),
@@ -210,6 +214,7 @@ def add_test_form():
 @app.route('/tests', methods=["PUT"])
 @app.route('/tests/add', methods=["GET"])
 def tests_put():
+    log_request()
     add_basic_platform_test(
                 request.args.get('uri'),
                 request.args.get('location'),
@@ -221,6 +226,7 @@ def tests_put():
 
 @app.route('/expire', methods=["PUT", "GET"])
 def expire_uri():
+    log_request()
     odakb.sparql.insert(
                 "{} oda:realm oda:expired".format(nuri(request.args.get('uri'))),
             )
@@ -371,6 +377,7 @@ def get_goals(f="all", wf=None):
 
 @app.route('/goals')
 def goals_get(methods=["GET"]):
+    log_request()
     odakb.sparql.query_stats = None
 
     f = request.args.get('f', "all")
@@ -382,6 +389,7 @@ def goals_get(methods=["GET"]):
 
 @app.route('/test-results')
 def test_results_get(methods=["GET"]):
+    log_request()
     try:
         db.connect()
     except peewee.OperationalError as e:
@@ -421,6 +429,7 @@ def recent_timestamp(waittime):
 
 @app.route('/offer-goal')
 def offer_goal():
+    log_request()
     rdf_init()
 
     n = request.args.get('n', 1, type=int)
@@ -451,6 +460,7 @@ def offer_goal():
 
 @app.route('/report-goal', methods=["POST"])
 def report_goal():
+    log_request()
     d = request.json
     goal = d.get('goal')
     data = d.get('data')
@@ -464,6 +474,7 @@ def report_goal():
 
 @app.route('/evaluate')
 def evaluate_one():
+    log_request()
     skip = request.args.get('skip', 0, type=int)
     n = request.args.get('n', 1, type=int)
     f = request.args.get('f', None) 
@@ -599,6 +610,7 @@ def list_features():
 
 @app.route('/features')
 def features():
+    log_request()
     fs = list_features()
 
     if 'json' in request.args:
@@ -608,6 +620,7 @@ def features():
 
 @app.route('/workflow')
 def workflow():
+    log_request()
     uri = request.args.get("uri")
 
     if 'json' in request.args:
@@ -623,6 +636,7 @@ def workflow():
 
 @app.route('/workflows')
 def workflows():
+    log_request()
     workflows = get_tests()
 
     if 'json' in request.args:
@@ -632,6 +646,7 @@ def workflows():
 
 @app.route('/graph')
 def graph():
+    log_request()
     totable = "table" in request.args
     tordf = "rdf" in request.args
 
@@ -661,7 +676,7 @@ def graph():
 import pylogstash
 log_stasher = pylogstash.LogStasher()
 
-def log_request(url=""):
+def log_request():
     request_summary = {'origin': 'odatests',
                  'url': url_for(request.endpoint),
                  'request-data': {
@@ -720,6 +735,7 @@ def viewdata():
 
 @app.route('/')
 def viewdash():
+    log_request()
     r = render_template('dashboard.html')
     return r
 
