@@ -1,5 +1,5 @@
 from flask import Flask
-from flask import render_template,make_response,request,jsonify
+from flask import render_template,make_response,request,jsonify, send_from_directory
 
 import pprint
 
@@ -662,14 +662,26 @@ import pylogstash
 log_stasher = pylogstash.LogStasher()
 
 def log_request():
-    m=dict(
-            origin="odatests",
-            request_args=dict(request.args)
-            )
-    logger.warning("log_request", m)
+    request_summary = {'origin': 'odatests',
+                 'request-data': {
+                    'headers': dict(request.headers),
+                    'host_url': request.host_url,
+                    'host': request.host,
+                    'args': dict(request.args),
+                    'json-data': dict(request.json or {}),
+                    'form-data': dict(request.form or {}),
+                    'raw-data': dict(request.data or ""),
+                }}
 
-    
-    log_stasher.log(m)
+    try:
+        request_summary['clientip']=request_summary['request-data']['headers']['X-Forwarded-For'].split(",")[0]
+        print("extracted client:", request_summary['clientip'] )
+    except Exception as e:
+        print("unable to extract client")
+
+    print(request_summary)
+
+    log_stasher.log(request_summary)
 
 @app.route('/data')
 def viewdata():
