@@ -14,4 +14,4 @@ Flask-JWT
 
 jsonschema
 
-pylogstash
+pylogstash_context
