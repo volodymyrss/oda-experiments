@@ -13,3 +13,5 @@ oda-knowledge-base==0.6.11
 Flask-JWT
 
 jsonschema
+
+pylogstash

@@ -663,9 +663,11 @@ log_stasher = pylogstash.LogStasher()
 
 def log_request():
     m=dict(
+            origin="odatests",
             request_args=dict(request.args)
             )
-    print(m)
+    logger.warning("log_request", m)
+
     
     log_stasher.log(m)
 
