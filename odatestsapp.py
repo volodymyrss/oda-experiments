@@ -57,6 +57,8 @@ import peewee
 from playhouse.db_url import connect
 from playhouse.shortcuts import model_to_dict, dict_to_model
 
+import pylogstash
+
 try:
     import io
 except:
@@ -656,8 +658,21 @@ def graph():
     else:
         return jsonify(dict(status="missing uri"))
 
+import pylogstash
+log_stasher = pylogstash.LogStasher()
+
+def log_request():
+    m=dict(
+            request_args=dict(request.args)
+            )
+    print(m)
+    
+    log_stasher.log(m)
+
 @app.route('/data')
 def viewdata():
+    log_request()
+
     uri = request.args.get("uri")
     if uri:
         return jsonify(get_data(uri))
@@ -799,6 +814,11 @@ def restore(w):
     except odakb.sparql.ManyAnswers:
         print("ambigiously known: %s"%uri)
         return None
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static'),
+                                           'favicon.png', mimetype='image/vnd.microsoft.icon')
 
 def listen(args):
     app.run(port=5555,debug=True,host=args.host,threaded=True)

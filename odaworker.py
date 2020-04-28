@@ -73,11 +73,18 @@ def worker(url, dry_run, one_shot):
         worker = dict(hostname=socket.gethostname(), time=time.time())
         
         if not dry_run:
-            r = requests.post(url+"/report-goal", json=dict(goal=goal, data=data, worker=worker, goal_uri=goal_uri))
+            while True:
+                try:
+                    r = requests.post(url+"/report-goal", json=dict(goal=goal, data=data, worker=worker, goal_uri=goal_uri))
 
-            print(r.text)
+                    print(r.text)
 
-            print(pprint.pformat(r.json()))
+                    print(pprint.pformat(r.json()))
+                    break
+                except Exception as e:
+                    print("failed to report:", e,"retrying")
+                    time.sleep(10)
+
         else:
             print("dry run, not reporting")
 
