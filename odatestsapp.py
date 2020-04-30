@@ -293,7 +293,7 @@ def design_goals(f=None):
         tgoals.append(g)
 
         g = copy.deepcopy(_g)
-        g['inputs']['timestamp'] = recent_timestamp(6000)
+        g['inputs']['timestamp'] = recent_timestamp(3600*8)
         tgoals.append(g)
 
     toinsert = ""
