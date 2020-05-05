@@ -369,7 +369,10 @@ def get_goals(f="all", wf=None):
         q += "?goal_uri oda:curryingOf ?w ."
         q += wf
     
-    r = odakb.sparql.select(q)
+    try:
+        r = odakb.sparql.select(q)
+    except odakb.sparql.NoAnswers:
+        return []
 
     return [ u['goal_uri'] for u in r ]
 

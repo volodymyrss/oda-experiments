@@ -34,6 +34,8 @@ def worker(url, dry_run, one_shot):
 
     while True:
         t0 = time.time()
+        
+        logger.info("requesting goal")
         r = requests.get(url+"/offer-goal", params=dict(n=nskip, f='?w oda:callType oda:python_function'))
         logger.info("query took %.2lg seconds", time.time() - t0)
 
