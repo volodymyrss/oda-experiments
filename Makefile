@@ -20,4 +20,8 @@ image-name: .FORCE
 push: build
 	docker push $(IMAGE)
 
+test:
+	mypy *.py
+	pylint -E  *.py
+
 .FORCE:

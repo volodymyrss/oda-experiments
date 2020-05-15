@@ -7,6 +7,8 @@ import pprint
 
 import json
 
+import jsonschema # type: ignore
+
 logging.basicConfig(level=logging.INFO)
 logger=logging.getLogger("odaworker")
 
@@ -14,7 +16,6 @@ logger=logging.getLogger("odaworker")
 def cli():
     pass
 
-import jsonschema
 
 workflow_schema = json.loads(open("workflow-schema.json").read())
 

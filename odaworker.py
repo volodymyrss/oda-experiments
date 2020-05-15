@@ -12,7 +12,7 @@ import json
 
 import odarun
 from odaworkflow import validate_workflow, w2uri
-from odakb.sparql import nuri
+from odakb.sparql import nuri # type: ignore
 from odakb.sparql import init as rdf_init
 
 logging.basicConfig(level=logging.INFO)

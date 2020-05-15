@@ -10,9 +10,8 @@ import requests
 import hashlib
 import copy
 
-import rdflib
+import rdflib # type: ignore
 
-import peewee
 import datetime
 import yaml
 import io
@@ -21,17 +20,16 @@ import subprocess
 
 import functools
 
-from flask_jwt import JWT, jwt_required, current_identity
+from flask_jwt import JWT, jwt_required, current_identity # type: ignore
 from werkzeug.security import safe_str_cmp
 
 from urllib.parse import urlencode, quote_plus
 
-import odakb
-import odakb.sparql
-import odakb.datalake
-
+import odakb # type: ignore
+import odakb.sparql # type: ignore
+import odakb.datalake # type: ignore
+from odakb.sparql import render_uri, nuri # type: ignore
 from odakb.sparql import init as rdf_init
-from odakb.sparql import nuri
 
 import os
 import time
@@ -43,31 +41,24 @@ import logging
 
 import odarun
 
-import jsonschema
+import jsonschema # type: ignore
 import json
 
-from typing import Union
-from odakb.sparql import render_uri, nuri
-import odakb.sparql 
+from typing import Union, List
+
+
+import pylogstash # type: ignore
 
 odakb.sparql.query_stats = None
 
-import pymysql
-import peewee
-from playhouse.db_url import connect
-from playhouse.shortcuts import model_to_dict, dict_to_model
-
-import pylogstash
+debug=True
 
 try:
     import io
 except:
     from io import StringIO
 
-try:
-    import urlparse
-except ImportError:
-    import urllib.parse as urlparse
+import urllib.parse as urlparse
 
 
 class User(object):
@@ -86,7 +77,7 @@ users = [
 username_table = {u.username: u for u in users}
 userid_table = {u.id: u for u in users}
 
-
+custom_timestamps = [] # type: List
 
 def assertEqual(a, b, e=None):
     if a != b:
@@ -157,9 +148,11 @@ def handle_error(error):
     return make_response(str(error)), 400
 
 @app.errorhandler(Exception)
-def handle_error(error):
-    raise error
-    return make_response("Unexpected error. I am not sure how you made this happen, but I thank you for spotting this issue, I dealing with it! If you want to keep in touch, please share your email"), 500
+def handle_bad_error(error):
+    if debug:
+        raise error
+    else:
+        return make_response("Unexpected error. I am not sure how you made this happen, but I thank you for spotting this issue, I dealing with it! If you want to keep in touch, please share your email"), 500
 
 @app.route("/status")
 def status():
@@ -223,6 +216,14 @@ def tests_put():
             )
     return jsonify(dict(status="ok"))
 
+@app.route('/now', methods=["PUT", "GET"])
+def now():
+    custom_timestamps.append()
+    return jsonify(dict(status="ok"))
+
+@app.route('/moments', methods=["GET"])
+def moments():
+    return jsonify(dict(status="ok", relevant_timestamps=relevant_timestamps()))
 
 @app.route('/expire', methods=["PUT", "GET"])
 def expire_uri():
@@ -288,13 +289,11 @@ def design_goals(f=None):
     tgoals = []
     for _g in goals:
         #tgoals.append(_g)
-        g = copy.deepcopy(_g)
-        g['inputs']['timestamp'] = midnight_timestamp()
-        tgoals.append(g)
 
-        g = copy.deepcopy(_g)
-        g['inputs']['timestamp'] = recent_timestamp(3600*8)
-        tgoals.append(g)
+        for timestamp in relevant_timestamps():
+            g = copy.deepcopy(_g)
+            g['inputs']['timestamp'] = timestamp
+            tgoals.append(g)
 
     toinsert = ""
 
@@ -390,37 +389,6 @@ def goals_get(methods=["GET"]):
 
     return jsonify(get_goals(f))
 
-@app.route('/test-results')
-def test_results_get(methods=["GET"]):
-    log_request()
-    try:
-        db.connect()
-    except peewee.OperationalError as e:
-        pass
-
-    decode = bool(request.args.get('raw'))
-
-    print("searching for entries")
-    date_N_days_ago = datetime.datetime.now() - datetime.timedelta(days=float(request.args.get('since',1)))
-
-    entries=[entry for entry in TestResult.select().where(Test.modified >= date_N_days_ago).order_by(Test.modified.desc()).execute()]
-
-    bystate = defaultdict(int)
-    #bystate = defaultdict(list)
-
-    for entry in entries:
-        print("found state", entry.state)
-        bystate[entry.state] += 1
-        #bystate[entry.state].append(entry)
-
-    db.close()
-
-    if request.args.get('json') is not None:
-        return jsonify({k:v for k,v in bystate.items()})
-    else:
-        return render_template('task_stats.html', bystate=bystate)
-    #return jsonify({k:len(v) for k,v in bystate.items()})
-
 
 def midnight_timestamp():
     now = datetime.datetime.now()
@@ -429,6 +397,19 @@ def midnight_timestamp():
 def recent_timestamp(waittime):
     sind = datetime.datetime.now().timestamp() - midnight_timestamp()
     return midnight_timestamp() + int(sind/waittime)*waittime
+
+def custom_timestamp(waittime):
+    sind = datetime.datetime.now().timestamp() - midnight_timestamp()
+    return midnight_timestamp() + int(sind/waittime)*waittime
+
+def relevant_timestamps():
+    ts = []
+
+    ts.append(midnight_timestamp())
+    ts.append(recent_timestamp(3600*8))
+    ts += custom_timestamps
+
+    return max(ts)
 
 @app.route('/offer-goal')
 def offer_goal():
