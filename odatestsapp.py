@@ -2,6 +2,7 @@ from flask import Flask
 from flask import render_template,make_response,request,jsonify, send_from_directory, url_for
 
 import pprint
+import click
 
 from odaworkflow import validate_workflow, w2uri
 
@@ -220,7 +221,7 @@ def tests_put():
 def now():
     tslast = max(relevant_timestamps())
 
-    t0 = time.time()
+    t0 = int(time.time())
     
     tlim = 600
 
@@ -491,10 +492,36 @@ def evaluate_one():
     return jsonify(dict(goal_uri=w2uri(goal, "goal"), goal=r))
     #return make_response("deleted %i"%nentries)
 
-def list_data(f=None):
+def get_timestamps(f=None):
     r = odakb.sparql.select("""
             ?data oda:curryingOf ?workflow; 
+                  oda:curryied_input_timestamp ?input_timestamp .
+
+            ?workflow a oda:test; 
+                      oda:belongsTo oda:basic_testkit .
+
+            NOT EXISTS { ?data oda:realm oda:expired }
+            NOT EXISTS { ?workflow oda:realm oda:expired }
+
+                      """+(f or ""),
+                      only="?input_timestamp"
+                      )
+    ts = [(float(d['input_timestamp']), d['input_timestamp']) for d in r]
+
+    print(ts)
+
+    return ts
+
+def list_data(f=None):
+    ts_recent = get_timestamps()[-3:]
+
+    r = []
+
+    for tsi, ts in ts_recent:
+        r += odakb.sparql.select(f"""
+            ?data oda:curryingOf ?workflow; 
                   ?input_binding ?input_value;
+                  oda:curryied_input_timestamp "{ts}";
                   oda:test_status ?test_status .
 
 
@@ -503,14 +530,17 @@ def list_data(f=None):
             ?workflow a oda:test; 
                       oda:belongsTo oda:basic_testkit .
 
-            OPTIONAL {
+            OPTIONAL {{
                 ?workflow oda:domain ?workflow_domains 
-            }
+            }}
 
-            NOT EXISTS { ?data oda:realm oda:expired }
-            NOT EXISTS { ?workflow oda:realm oda:expired }
+            NOT EXISTS {{ ?data oda:realm oda:expired }}
+            NOT EXISTS {{ ?workflow oda:realm oda:expired }}
+            
+            { f or "" }
+                      """)
 
-                      """+(f or ""))
+    print(f"found {len(r)} entries")
 
 
     bydata = defaultdict(list)
@@ -707,7 +737,15 @@ def viewdata():
 
     odakb.sparql.reset_stats_collection()
     d = list_data(f)
-    request_stats = odakb.sparql.query_stats
+    
+    request_stats = [dict(
+                spent_seconds=sum(rs['spent_seconds'] for rs in odakb.sparql.query_stats),
+                query_size=sum(rs['query_size'] for rs in odakb.sparql.query_stats),
+            )]
+    
+        
+    timestamps = get_timestamps()
+
     odakb.sparql.query_stats = None
 
     if len(d)>0:
@@ -718,6 +756,8 @@ def viewdata():
     r = render_template('data.html', 
                 domains=domains,
                 data=d, 
+                tnow=time.time(),
+                timestamps=timestamps[-3:],
                 request_stats=request_stats,
                 timestamp_now=time.time()
             )
@@ -847,3 +887,18 @@ def favicon():
 def listen(args):
     app.run(port=5555,debug=True,host=args.host,threaded=True)
     
+
+@click.group()
+def cli():
+    pass
+
+@cli.command()
+def list_timestamps():
+    get_timestamps()
+
+@cli.command("list-data")
+def _list_data():
+    list_data()
+
+if __name__ == "__main__":
+    cli()

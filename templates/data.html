@@ -7,6 +7,12 @@
         {{ wd.replace("http://odahub.io/ontology", "") }} 
         </a>
     {% endfor %}
+
+    {% for ts in timestamps %}
+        <a href="data?f={{ ( "?data oda:curryied_input_timestamp \""+ts[1]+"\"") | urlencode }}">
+        {{ ((tnow-ts[0])/3600) | round(1) }} ago &nbsp;
+        </a>
+    {% endfor %}
     </div>
 
   <table class="table table-striped table-sm">
