@@ -291,10 +291,15 @@ def design_goals(f=None):
     goals = []
     for test in get_tests(f):
         logger.info("goal for test: %s", test)
-        for bind, ex in test['expects'].items():
+
+        test_goals = []
+
+        for bind, ex in test['expects'].items(): # matrix over options
             for option in odakb.sparql.select('?opt a <%s>'%ex):
                 if not '#input_' in option['opt']:
-                    goals.append({"base": test, 'inputs': {bind: option['opt']}}) #, 'reason': odakb.sparql.render_rdf('?opt a <%s>'%ex, option)}})
+                    test_goals.append({"base": test, 'inputs': {bind: option['opt']}}) #, 'reason': odakb.sparql.render_rdf('?opt a <%s>'%ex, option)}})
+
+        goals += test_goals
 
     tgoals = []
     for _g in goals:

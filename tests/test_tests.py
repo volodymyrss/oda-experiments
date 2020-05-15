@@ -76,6 +76,12 @@ def test_testgoals(client):
     assert u in r_r
     assert u not in r_unr
 
+def test_design(client):
+    import odatestsapp
+    goals = odatestsapp.design_goals()
+
+    print(goals)
+
 def test_list_testresults(client):
     r = client.get(url_for("data"))
     print(r.json)
