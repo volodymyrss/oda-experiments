@@ -218,7 +218,16 @@ def tests_put():
 
 @app.route('/now', methods=["PUT", "GET"])
 def now():
-    custom_timestamps.append()
+    tslast = max(relevant_timestamps())
+
+    t0 = time.time()
+    
+    tlim = 600
+
+    if t0 - tslast < tlim:
+        return jsonify(dict(status="NOK", message=f"too soon, {t0 - tslast} < {tlim}"))
+
+    custom_timestamps.append(t0)
     return jsonify(dict(status="ok"))
 
 @app.route('/moments', methods=["GET"])
@@ -402,14 +411,14 @@ def custom_timestamp(waittime):
     sind = datetime.datetime.now().timestamp() - midnight_timestamp()
     return midnight_timestamp() + int(sind/waittime)*waittime
 
-def relevant_timestamps():
+def relevant_timestamps(nlast=100):
     ts = []
 
     ts.append(midnight_timestamp())
     ts.append(recent_timestamp(3600*8))
     ts += custom_timestamps
 
-    return max(ts)
+    return list(sorted(ts))[-nlast:]
 
 @app.route('/offer-goal')
 def offer_goal():
