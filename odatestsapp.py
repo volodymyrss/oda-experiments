@@ -313,7 +313,7 @@ def design_goals(f=None):
                         newoption_test_goals.append(g)
                         #, 'reason': odakb.sparql.render_rdf('?opt a <%s>'%ex, option)}})
 
-            one_test_goals += newoption_test_goals
+            one_test_goals = newoption_test_goals
 
         goals += one_test_goals
 
