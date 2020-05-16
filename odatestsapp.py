@@ -782,6 +782,8 @@ def viewdata():
 
     odakb.sparql.reset_stats_collection()
     d = list_data(f)
+
+    current_goals = get_goals("unreached", wf=f)
     
     request_stats = [dict(
                 spent_seconds=sum(rs['spent_seconds'] for rs in odakb.sparql.query_stats),
@@ -804,7 +806,8 @@ def viewdata():
                 tnow=time.time(),
                 timestamps=timestamps[-3:],
                 request_stats=request_stats,
-                timestamp_now=time.time()
+                timestamp_now=time.time(),
+                current_goals=current_goals,
             )
 
 
