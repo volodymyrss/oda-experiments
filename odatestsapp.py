@@ -401,8 +401,8 @@ def get_goals(f="all", wf=None):
              """
 
     if wf is not None:
-        if '?w' not in wf:
-            raise BadRequest("workflow filter does not contain \"?w\" workflow variable")
+        if '?w' not in wf and '?data' not in wf:
+            raise BadRequest("workflow filter does not contain \"?w\" of \"?data\"  variables")
 
         q += "?goal_uri oda:curryingOf ?w ."
         q += wf
