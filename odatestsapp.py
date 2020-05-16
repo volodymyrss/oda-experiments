@@ -948,6 +948,15 @@ def list_timestamps():
 def _list_data():
     list_data()
 
+@cli.command("expire-data")
+def _expire_data():
+    for ts in get_timestamps(f=None):
+        print(ts[0])
+        if time.time()-ts[0]>3*24*3600:
+            print("expiring")
+            odakb.sparql.reason(f'?d oda:curryied_input_timestamp "{ts[1]}"', '?d oda:realm oda:expired')
+            return
+
 @cli.command("list-goals")
 @click.option("-f", default="")
 def _list_goals(f):
