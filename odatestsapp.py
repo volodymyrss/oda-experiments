@@ -469,7 +469,7 @@ def offer_goal():
             goal_uri = unreached_goals[n]
             #goal_uri = w2uri(goal)
 
-            logger.info("goal to offer", goal_uri)
+            logger.info(f"goal to offer {goal_uri}")
 
             try:
                 goal = get_data(goal_uri)
