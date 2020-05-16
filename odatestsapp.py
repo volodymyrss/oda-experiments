@@ -346,7 +346,7 @@ def design_goals(f=None):
                     base_uri=nuri(goal['base']['workflow']),
                 )
 
-    logger.info("toinsert", toinsert[:300])
+    logger.info(f"toinsert {toinsert[:300]}")
 
     odakb.sparql.insert(toinsert)
 
@@ -715,7 +715,7 @@ def graph():
     if uri:
         g = get_graph(uri)
 
-        logger.info("graph for", uri, g)
+        logger.info(f"graph for {uri} {g}")
 
         if totable:
             return jsonify(g)
@@ -752,7 +752,7 @@ def log_request():
 
     try:
         request_summary['clientip']=request_summary['request-data']['headers']['X-Forwarded-For'].split(",")[0]
-        logger.info("extracted client:", request_summary['clientip'] )
+        logger.info(f"extracted client: {request_summary['clientip']}" )
     except Exception as e:
         logger.info("unable to extract client")
 
@@ -856,7 +856,7 @@ def evaluate(w: Union[str, dict], allow_run=True):
 
     jsonschema.validate(w, json.loads(open("workflow-schema.json").read()))
 
-    logger.info("evaluate this", w)
+    logger.info(f"evaluate this {w}")
 
 
     r = restore(w) 
@@ -870,8 +870,8 @@ def evaluate(w: Union[str, dict], allow_run=True):
             s = store(w, r)
         
             if nuri(s['goal_uri']) != nuri(goal_uri):
-                logger.info("stored goal uri", s['goal_uri'])
-                logger.info("requested goal uri", goal_uri)
+                logger.info(f"stored goal uri {s['goal_uri']}")
+                logger.info(f"requested goal uri {goal_uri}")
                 raise Exception("inconsistent storage")
 
             return 'ran', r
@@ -884,7 +884,7 @@ def store(w, d):
     uri = w2uri(w)
     goal_uri = w2uri(w, "goal")
 
-    logger.info("storing", d)
+    logger.info(f"storing {d}")
 
     b = odakb.datalake.store(dict(data=d, workflow=w))
     s="""
@@ -900,7 +900,7 @@ def store(w, d):
                                 status=d['status']
                             )
 
-    logger.info("created, to insert:", s)
+    logger.info(f"created, to insert: {s}")
 
     odakb.sparql.insert(s)
 
