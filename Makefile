@@ -1,4 +1,5 @@
-IMAGE=admin.reproducible.online/oda-tests:$(shell git describe --always)
+REPO=admin.reproducible.online/oda-tests
+IMAGE=$(REPO):$(shell git describe --always)
 CONTAINER=odatests
 
 run: build
@@ -19,6 +20,8 @@ image-name: .FORCE
 
 push: build
 	docker push $(IMAGE)
+	docker tag $(IMAGE) $(REPO):latest
+	docker push $(REPO):latest
 
 test:
 	mypy *.py
