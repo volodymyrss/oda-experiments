@@ -32,7 +32,7 @@ def run_python_function(w):
             time_constrain = float(v)
 
     if time_constrain is not None:
-        if time_constrain < time.time() - 7200:
+        if time_constrain < time.time() - 3600*3:
             print("time-constrained goal obsolete!")
 
             result = dict(stdout='')

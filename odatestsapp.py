@@ -97,7 +97,7 @@ def identity(payload):
 
 n_failed_retries = int(os.environ.get('DQUEUE_FAILED_N_RETRY','20'))
 
-logger=logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 #handler=logging.StreamHandler()
 #logger.addHandler(handler)
@@ -106,7 +106,7 @@ logger.setLevel(logging.INFO)
 
 def log(*args,**kwargs):
     severity=kwargs.get('severity','warning').upper()
-    logger.log(getattr(logging,severity)," ".join([repr(arg) for arg in list(args)+list(kwargs.items())]))
+    logger.info(getattr(logging,severity)," ".join([repr(arg) for arg in list(args)+list(kwargs.items())]))
 
 
 
@@ -322,7 +322,7 @@ def design_goals(f=None):
                     base_uri=nuri(goal['base']['workflow']),
                 )
 
-    print("toinsert", toinsert[:300])
+    logger.info("toinsert", toinsert[:300])
 
     odakb.sparql.insert(toinsert)
 
@@ -336,7 +336,7 @@ def design_goals(f=None):
             logging.warning("bucketless goal %s not currently designable: ignoring", goal_uri)
             continue
 
-        print("bucketless goal:", goal_uri)
+        logger.info("bucketless goal:", goal_uri)
 
         bucket = odakb.datalake.store(byuri[goal_uri])
 
@@ -347,7 +347,7 @@ def design_goals(f=None):
 #        reconstructed_goal = get_data(goal_uri)
 #        assert nuri(w2uri(reconstructed_goal, "goal")) == goal_uri
 
-    print("toinsert", len(toinsert))
+    logger.info("toinsert", len(toinsert))
     odakb.sparql.insert(toinsert)
 
 
@@ -434,28 +434,34 @@ def offer_goal():
     n = request.args.get('n', 1, type=int)
     f = request.args.get('f', None) 
 
-    r = []
 
-    design_goals()
+    while True:
+        r = []
+        design_goals()
 
-    unreached_goals = get_goals("unreached", wf=f)
+        unreached_goals = get_goals("unreached", wf=f)
 
-    if len(unreached_goals) > n:
-        goal_uri = unreached_goals[n]
-        #goal_uri = w2uri(goal)
+        if len(unreached_goals) > n:
+            goal_uri = unreached_goals[n]
+            #goal_uri = w2uri(goal)
 
-        print("goal to offer", goal_uri)
+            logger.info("goal to offer", goal_uri)
 
-        goal = get_data(goal_uri)
+            try:
+                goal = get_data(goal_uri)
+            except odakb.sparql.NoAnswers as e:
+                logger.info(f"non-existent goal {goal_uri}")
+                odakb.sparql.delete(f"<{goal_uri}> ?p ?o", all_entries=True)
+                continue
 
-        assertEqual(nuri(goal_uri), nuri(w2uri(goal, "goal")))
+            assertEqual(nuri(goal_uri), nuri(w2uri(goal, "goal")))
 
-        print("offering goal", goal)
-        print("offering goal uri", goal_uri)
+            logger.info(f"offering goal {goal}")
+            logger.info(f"offering goal uri {goal_uri}")
 
-        return jsonify(dict(goal_uri=goal_uri, goal=goal))
-    else:
-        return jsonify(dict(warning="no goals"))
+            return jsonify(dict(goal_uri=goal_uri, goal=goal))
+        else:
+            return jsonify(dict(warning="no goals"))
 
 @app.route('/report-goal', methods=["POST"])
 def report_goal():
@@ -513,7 +519,7 @@ def get_timestamps(f=None):
                       )
     ts = [(float(d['input_timestamp']), d['input_timestamp']) for d in r]
 
-    print(ts)
+    logger.info(ts)
 
     return ts
 
@@ -545,7 +551,7 @@ def list_data(f=None):
             { f or "" }
                       """)
 
-    print(f"found {len(r)} entries")
+    logger.info(f"found {len(r)} entries")
 
 
     bydata = defaultdict(list)
@@ -682,7 +688,7 @@ def graph():
     if uri:
         g = get_graph(uri)
 
-        print("graph for", uri, g)
+        logger.info("graph for", uri, g)
 
         if totable:
             return jsonify(g)
@@ -719,11 +725,11 @@ def log_request():
 
     try:
         request_summary['clientip']=request_summary['request-data']['headers']['X-Forwarded-For'].split(",")[0]
-        print("extracted client:", request_summary['clientip'] )
+        logger.info("extracted client:", request_summary['clientip'] )
     except Exception as e:
-        print("unable to extract client")
+        logger.info("unable to extract client")
 
-    print(request_summary)
+    logger.info(request_summary)
 
     log_stasher.log(request_summary)
 
@@ -811,7 +817,7 @@ def evaluate(w: Union[str, dict], allow_run=True):
 
     jsonschema.validate(w, json.loads(open("workflow-schema.json").read()))
 
-    print("evaluate this", w)
+    logger.info("evaluate this", w)
 
 
     r = restore(w) 
@@ -826,8 +832,8 @@ def evaluate(w: Union[str, dict], allow_run=True):
             s = store(w, r)
         
             if nuri(s['goal_uri']) != nuri(goal_uri):
-                print("stored goal uri", s['goal_uri'])
-                print("requested goal uri", goal_uri)
+                logger.info("stored goal uri", s['goal_uri'])
+                logger.info("requested goal uri", goal_uri)
                 raise Exception("inconsistent storage")
 
             return 'ran', r
@@ -840,7 +846,7 @@ def store(w, d):
     uri = w2uri(w)
     goal_uri = w2uri(w, "goal")
 
-    print("storing", d)
+    logger.info("storing", d)
 
     b = odakb.datalake.store(dict(data=d, workflow=w))
     s="""
@@ -856,7 +862,7 @@ def store(w, d):
                                 status=d['status']
                             )
 
-    print("created, to insert:", s)
+    logger.info("created, to insert:", s)
 
     odakb.sparql.insert(s)
 
@@ -877,11 +883,11 @@ def restore(w):
         return b['data']
 
     except odakb.sparql.NoAnswers:
-        print("not known: %s"%uri)
+        logger.info("not known: %s"%uri)
         return None
 
     except odakb.sparql.ManyAnswers:
-        print("ambigiously known: %s"%uri)
+        logger.info("ambigiously known: %s"%uri)
         return None
 
 @app.route('/favicon.ico')

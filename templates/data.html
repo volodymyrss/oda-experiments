@@ -2,7 +2,7 @@
 {% block content %}
 
     <div class="container p-3">
-    {% for wd in domains %}
+    {% for wd in (domains|sort) %}
         <a href="data?f={{ ("?workflow oda:domain <"+wd+">") | urlencode }}">
         {{ wd.replace("http://odahub.io/ontology", "") }} 
         </a>
@@ -10,7 +10,7 @@
 
     {% for ts in timestamps %}
         <a href="data?f={{ ( "?data oda:curryied_input_timestamp \""+ts[1]+"\"") | urlencode }}">
-        {{ ((tnow-ts[0])/3600) | round(1) }} ago &nbsp;
+        {{ ((tnow-ts[0])/3600) | round(1) }}h ago &nbsp;
         </a>
     {% endfor %}
     </div>
@@ -52,26 +52,29 @@
 
             <td class="{{ status_class }} text-{{status_class}} text-center">{{ status_message }}</td>
             <td>
+                <small>
                 <ul>
                 {% for v in d.inputs %}
+                    {% if v.input_binding != "http://odahub.io/ontology#curryied_input_timestamp" %}
                     <li>
                         <b>{{v.input_binding.replace("http://odahub.io/ontology#curryied_input_","")}}</b> = 
                             {{v.input_value.replace("http://odahub.io/ontology#","")}}</span>
-                        {% if v.input_binding == "http://odahub.io/ontology#curryied_input_timestamp" %}
-                            ({{ ((timestamp_now-(v.input_value|float))*3600**-1) | round(1) }} h ago)
-                        {% endif %}
                     </li>
+                    {% endif %}
                 {% endfor %}
                 </ul>
+                </small>
             </td>
-            <td class="warning">
+            <td>
                 {% if d.timestamp %}
-                    {{ d.timestamp }} ({{ d.timestamp_age_h | round(1)}} h ago)
+                    {{ d.timestamp }} 
+                    <span class="text-info">
+                    ({{ d.timestamp_age_h | round(1)}} h ago)
+                    </span>
                 {% endif %}
             </td>
             <td>
                 <div class="span2">
-                    <button type="button" class="btn btn-sm btn-block btn-primary">Reschedule</button>
                     <button type="button" class="btn btn-sm btn-block btn-danger">Expire</button>
                 </div>
             </td>
