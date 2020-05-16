@@ -15,7 +15,7 @@ build:
 	docker build -t $(IMAGE) .
 
 image-name: .FORCE
-	echo $(IMAGE) > image-name
+	echo $(IMAGE) > ../image-name
 
 push: build
 	docker push $(IMAGE)
