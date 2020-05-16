@@ -3,6 +3,7 @@ from flask import render_template,make_response,request,jsonify, send_from_direc
 
 import pprint
 import click
+import copy
 
 from odaworkflow import validate_workflow, w2uri
 
@@ -235,12 +236,15 @@ def now():
 def moments():
     return jsonify(dict(status="ok", relevant_timestamps=relevant_timestamps()))
 
+def expire(u):
+    odakb.sparql.insert(
+                "{} oda:realm oda:expired".format(nuri(u)),
+            )
+
 @app.route('/expire', methods=["PUT", "GET"])
 def expire_uri():
     log_request()
-    odakb.sparql.insert(
-                "{} oda:realm oda:expired".format(nuri(request.args.get('uri'))),
-            )
+    expire(request.args.get('uri'))
     return jsonify(dict(status="ok"))
 
 
@@ -292,20 +296,32 @@ def design_goals(f=None):
     for test in get_tests(f):
         logger.info("goal for test: %s", test)
 
-        test_goals = []
+        one_test_goals = [{
+                            "base": test, 
+                            'inputs': {}
+                         }]
 
         for bind, ex in test['expects'].items(): # matrix over options
-            for option in odakb.sparql.select('?opt a <%s>'%ex):
-                if not '#input_' in option['opt']:
-                    test_goals.append({"base": test, 'inputs': {bind: option['opt']}}) #, 'reason': odakb.sparql.render_rdf('?opt a <%s>'%ex, option)}})
+            newoption_test_goals = []
 
-        goals += test_goals
+            for test_goal in one_test_goals:
+                for option in odakb.sparql.select('?opt a <%s>'%ex):
+                    if not '#input_' in option['opt']: # actual option, not input
+                        g = copy.deepcopy(test_goal)
+                        g['inputs'][bind] = option['opt']
+
+                        newoption_test_goals.append(g)
+                        #, 'reason': odakb.sparql.render_rdf('?opt a <%s>'%ex, option)}})
+
+            one_test_goals += newoption_test_goals
+
+        goals += one_test_goals
 
     tgoals = []
     for _g in goals:
         #tgoals.append(_g)
 
-        for timestamp in relevant_timestamps():
+        for timestamp in relevant_timestamps(1):
             g = copy.deepcopy(_g)
             g['inputs']['timestamp'] = timestamp
             tgoals.append(g)
@@ -336,7 +352,7 @@ def design_goals(f=None):
             logging.warning("bucketless goal %s not currently designable: ignoring", goal_uri)
             continue
 
-        logger.info("bucketless goal:", goal_uri)
+        logger.info(f"bucketless goal: {goal_uri}")
 
         bucket = odakb.datalake.store(byuri[goal_uri])
 
@@ -347,7 +363,7 @@ def design_goals(f=None):
 #        reconstructed_goal = get_data(goal_uri)
 #        assert nuri(w2uri(reconstructed_goal, "goal")) == goal_uri
 
-    logger.info("toinsert", len(toinsert))
+    logger.info(f"toinsert {len(toinsert)}")
     odakb.sparql.insert(toinsert)
 
 
@@ -566,9 +582,12 @@ def list_data(f=None):
         R['uri'] = k
 
         for common_key in "test_status", "workflow":
-            l = [ve[common_key] for ve in v]
-            assert all([_l==l[0] for _l in l])
-            R[common_key] = l[0]
+            l = list(set([ve[common_key] for ve in v]))
+            if len(l) == 1:
+                R[common_key] = l[0]
+            else:
+                logger.error(f"data {k} has different common key {common_key}: {l}; expiring!")
+                expire(k)
         
         for joined_key in "workflow_domains",:
             l = [ve[joined_key] for ve in v if joined_key in ve]
@@ -910,6 +929,16 @@ def list_timestamps():
 @cli.command("list-data")
 def _list_data():
     list_data()
+
+@cli.command("list-goals")
+@click.option("-f", default="")
+def _list_goals(f):
+    d = []
+    for g in design_goals(f):
+        print("designed goal:", g)
+        d.append(g)
+
+    json.dump(d, open("designed-goals.json", "wt"), indent=4)
 
 if __name__ == "__main__":
     cli()

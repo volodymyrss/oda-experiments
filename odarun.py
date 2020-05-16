@@ -33,7 +33,7 @@ def run_python_function(w):
 
     if time_constrain is not None:
         if time_constrain < time.time() - 3600*3:
-            print("time-constrained goal obsolete!")
+            print(f"time-constrained goal obsolete: {time_constrain - time.time()} < {- 3600*3}!")
 
             result = dict(stdout='')
             status = 'obsolete'
