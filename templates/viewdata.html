@@ -1,0 +1,38 @@
+{% extends "layout.html" %}
+{% block content %}
+
+    {% set status_class = {
+                    'success': 'bg-success text-white text-center', 
+                    'failed': 'bg-danger text-white text-center',
+                }[data.status] %}
+    <div class="{{status_class}}">
+        <h4>
+        {{ data.status }}
+        </h4>
+    </div>
+      
+  <div class="container p-3 text-white bg-dark">
+      {{data.result.stdout|ansi2html|safe}}
+  </div>
+
+  <table class="table table-striped table-sm">
+
+    <thead class="thead">
+     <tr>
+       <th>Predicate</th>
+       <th>Object</th>
+     </tr>
+    </thead>
+
+
+    {% for k,v in data.items() %}
+        {% if k not in ["result", "status"] %}
+        <tr>
+            <td>{{ k }}</td>
+            <td>{{ v }}</td>
+        </tr>
+        {% endif %}
+    {% endfor %}
+
+  </table>
+{% endblock %}
