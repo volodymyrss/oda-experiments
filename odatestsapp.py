@@ -18,6 +18,8 @@ import datetime
 import yaml
 import io
 
+from ansi2html import ansi2html
+
 import subprocess
 
 import functools
@@ -141,6 +143,10 @@ def create_app():
     return app
 
 app = create_app()
+
+@app.template_filter('ansi2html')
+def ansi2html_filter(arg):
+    return "<br>".join(ansi2html(arg).split("\n"))
 
 class BadRequest(Exception):
     pass
@@ -756,11 +762,20 @@ def log_request():
 def viewdata():
     log_request()
 
+    return_json = 'json' in request.args
+
     uri = request.args.get("uri")
     if uri:
-        return jsonify(get_data(uri))
+        data = get_data(uri)
+        if return_json:
+            return jsonify(data)
+        else:
+            return render_template('viewdata.html', 
+                        tnow=time.time(),
+                        **data, 
+                    )
 
-    if 'json' in request.args:
+    if return_json:
         return jsonify(list_data())
 
     f = request.args.get("f", None)
@@ -844,9 +859,8 @@ def evaluate(w: Union[str, dict], allow_run=True):
     if r is not None:
         return 'restored', r
     else:
-        
         if allow_run:
-            r = { 'origin':"run", **odarun.run(w)}
+            r = { 'origin':"run", **odarun.run(w) }
 
             s = store(w, r)
         

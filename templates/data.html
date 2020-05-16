@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 {% block content %}
 
-    <div class="container p-3">
+    <div class="container-xl">
     {% for wd in (domains|sort) %}
         <a href="data?f={{ ("?workflow oda:domain <"+wd+">") | urlencode }}">
         {{ wd.replace("http://odahub.io/ontology", "") }} 
