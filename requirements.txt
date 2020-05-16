@@ -16,4 +16,4 @@ jsonschema
 
 pylogstash_context==0.1.12
 
-simple-ansi2html
+simpler-ansi2html
