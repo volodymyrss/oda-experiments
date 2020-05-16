@@ -138,6 +138,7 @@ def create_app():
     app.wsgi_app = ReverseProxied(app.wsgi_app)
     app.debug = True
     app.config['SECRET_KEY'] = os.environ.get("ODATESTS_SECRET_KEY")
+    app.config["APPLICATION_ROOT"] = "/odatests"
 
     jwt = JWT(app, authenticate, identity)
     return app
