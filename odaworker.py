@@ -64,6 +64,7 @@ def worker(url, dry_run, one_shot):
             raise Exception("goal uri mismatch:", nuri(w2uri(goal, "goal")), nuri(goal_uri))
 
         try:
+            logger.info("running!")
             data = odarun.run(goal)
             nskip=0
         except odarun.UnsupportedCallType:
@@ -93,6 +94,7 @@ def worker(url, dry_run, one_shot):
         if one_shot:
             break
 
+        logger.info("sleeping too the next goal")
         time.sleep(35)
 
 if __name__ == "__main__":
