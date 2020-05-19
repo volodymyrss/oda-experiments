@@ -822,6 +822,21 @@ def viewdash():
     r = render_template('dashboard.html')
     return r
 
+@app.route('/facts-about-integral')
+def viewfactsaboutintegral():
+    log_request()
+    from aitextgen import aitextgen
+
+    ai = aitextgen()
+
+    r = ai.generate(n=1, 
+                    prompt=f"On {time.strftime('%-d of %b %Y')} INTEGRAL observed", 
+                    max_length=300, 
+                    temperature=1.2, 
+                    return_as_list=True)
+
+    return render_template('facts-about-integral.html', fact="\n".join(r)+"...")
+
 @app.template_filter()
 def uri(uri, showwith=None):
     suri = uri.replace("http://odahub.io/ontology#", "oda:")
