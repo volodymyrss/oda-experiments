@@ -7,7 +7,7 @@ pytest-flask
 
 keyring
 
-oda-knowledge-base==0.6.12
+oda-knowledge-base==0.6.13
 
 Flask-JWT
 
@@ -17,4 +17,3 @@ pylogstash_context==0.1.12
 
 simpler-ansi2html
 
-aitextgen

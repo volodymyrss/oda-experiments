@@ -1,7 +1,6 @@
 from flask import Flask
 from flask import render_template,make_response,request,jsonify, send_from_directory, url_for
 
-
 import pprint
 import click
 import copy
@@ -982,6 +981,30 @@ def _list_goals(f):
         d.append(g)
 
     json.dump(d, open("designed-goals.json", "wt"), indent=4)
+
+@app.route('/papers', methods=["GET"])
+def papers():
+    log_request()
+
+    papers = odakb.sparql.select("?paper paper:location ?location; ?p ?o", "?paper ?p ?o", tojdict=True)
+
+    return render_template("papers.html",
+                papers=sorted(papers.items(), key=lambda x:-len(x[1]))
+            )
+
+@app.route('/care', methods=["PUT", "GET"])
+def care_uri():
+    log_request()
+
+    rdf_init()
+
+    whouri = request.args.get('who-uri', 'oda:me')
+    paperuri = request.args.get('paper-uri')
+
+    odakb.sparql.insert(f'{nuri(whouri)} oda:cares_about {nuri(paperuri)}')
+    odakb.sparql.insert(f'{nuri(paperuri)} oda:cared_about_by {nuri(whouri)}')
+
+    return jsonify(dict(status="ok"))
 
 if __name__ == "__main__":
     cli()
