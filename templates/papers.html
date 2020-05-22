@@ -16,7 +16,7 @@
        <th>URI</th>
        <th>Title</th>
        <th>Facts About Paper</th>
-       <th>Facts Reported In Paper</th>
+       <th>Facts In Paper</th>
        <th>Actions</th>
      </tr>
     </thead>
@@ -26,6 +26,10 @@
             <td>
                 {% for l in p['paper:location'] %}
                     <a href="{{ l }}">{{ pid }}</a>
+                {% endfor %}
+                <br>
+                {% for l in p['paper:updated_isot'] %}
+                    {{ l }}
                 {% endfor %}
             </td>
             <td>
