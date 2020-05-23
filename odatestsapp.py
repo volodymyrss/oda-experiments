@@ -986,13 +986,17 @@ def _list_goals(f):
 def papers():
     log_request()
 
+    recent_days=request.args.get('recent_days', 3, type=float)
+
     papers = odakb.sparql.select(f"""
                 ?paper paper:location ?location; 
-                       ?p ?o;
-                       paper:updated_ts ?ts .
-
-                FILTER ( ?ts > {time.time()-24*3600*3} )
-            """, "?paper ?p ?o" , tojdict=True)
+                       ?p ?o .""",
+#"""
+#                OPTIONAL {{ ?paper paper:updated_ts ?ts }} 
+#
+#                FILTER ( ?ts > {time.time()-24*3600*recent_days} )
+#            """,
+            "?paper ?p ?o" , tojdict=True)
 
     return render_template("papers.html",
                 papers=sorted(papers.items(), key=lambda x:-len(x[1]))

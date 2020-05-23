@@ -15,8 +15,8 @@
      <tr>
        <th>URI</th>
        <th>Title</th>
-       <th>Facts About Paper</th>
-       <th>Facts In Paper</th>
+       <th>Facts</th>
+       <th>Suggested Workflows</th>
        <th>Actions</th>
      </tr>
     </thead>
@@ -38,6 +38,7 @@
                 {% endfor %}
             </td>
             <td> 
+                <i>About Paper</i>
                 <ol>
                 {% for k,v in p.items() %}
                 {% if k not in ['@id', 'paper:location', 'paper:title']%}
@@ -47,6 +48,7 @@
                 {% endif %}
                 {% endfor %}
                 </ol>
+                <i>Claimed By Paper</i>
             </td>
 
             <td>
