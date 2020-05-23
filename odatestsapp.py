@@ -992,7 +992,7 @@ def papers():
     papers = odakb.sparql.select(f"""
                 ?paper paper:location ?location; 
                        ?p ?o;
-                       paper:updated_ts ?ts .
+                       paper:timestamp ?ts .
 
                 FILTER ( ?ts > {time.time()-24*3600*recent_days} )
                 FILTER ( ?ts < {time.time()-24*3600*older_days} )
