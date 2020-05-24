@@ -149,6 +149,10 @@ app = create_app()
 def ansi2html_filter(arg):
     return "<br>".join(ansi2html(arg).split("\n"))
 
+@app.template_filter('timestamp2isot')
+def timestamp2isot_filter(arg):
+    return datetime.datetime.fromtimestamp(float(arg)).isoformat()
+
 class BadRequest(Exception):
     pass
 
@@ -986,8 +990,8 @@ def _list_goals(f):
 def papers():
     log_request()
 
-    recent_days=request.args.get('recent_days', 3, type=float)
-    older_days=request.args.get('older_days', 0, type=float)
+    recent_days=max(request.args.get('recent_days', 3, type=float), 1)
+    older_days=max(request.args.get('older_days', 0, type=float), 0)
 
     papers = odakb.sparql.select(f"""
                 ?paper paper:location ?location; 
@@ -1000,7 +1004,9 @@ def papers():
             "?paper ?p ?o" , tojdict=True)
 
     return render_template("papers.html",
-                papers=sorted(papers.items(), key=lambda x:-len(x[1]))
+                papers=sorted(papers.items(), key=lambda x:-len(x[1])),
+                recent_days=recent_days,
+                older_days=older_days,
             )
 
 @app.route('/care', methods=["PUT", "GET"])
