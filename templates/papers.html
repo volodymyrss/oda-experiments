@@ -38,17 +38,32 @@
                 {% endfor %}
             </td>
             <td> 
-                <i>About Paper</i>
-                <ol>
-                {% for k,v in p.items() %}
-                {% if k not in ['@id', 'paper:location', 'paper:title']%}
-                    <li>
-                        {{ k }}: {{ v }}
-                    </li>
-                {% endif %}
-                {% endfor %}
-                </ol>
-                <i>Claimed By Paper</i>
+                {% set rowid = pid.replace(":","-").replace(".", "-") %}
+
+                <div id="accordion">
+                    <button class="btn btn-link" data-toggle="collapse" data-target="#collapse{{ rowid }}">
+                        {% for k,v in p.items() %}
+                        {% if k not in ['@id', 'paper:location', 'paper:title'] and 'times' not in k and 'updated' not in k%}
+                                {{ k.split(":")[1] }}
+                        {% endif %}
+                        {% endfor %}
+                    </button>
+
+                    <div id="collapse{{ rowid }}" class="collapse" data-parent="#accordion">
+                        <small>
+                        <ol>
+                        {% for k,v in p.items() %}
+                        {% if k not in ['@id', 'paper:location', 'paper:title']%}
+                            <li>
+                                {{ k }}: {{ v }}
+                            </li>
+                        {% endif %}
+                        {% endfor %}
+                        </ol>
+                        </small>
+                    </div>
+                </div>
+
             </td>
 
             <td>
