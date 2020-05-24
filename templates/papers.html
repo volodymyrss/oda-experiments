@@ -2,16 +2,37 @@
 {% block content %}
 
     <div class="container p-3">
-        from {{ older_days }} to  {{ recent_days }} days ago 
-        <a href="?recent_days=1&older_days=0">
+        {% set span_days = recent_days - older_days %}
+
+        {{ span_days }} from {{ older_days }} to  {{ recent_days }} days ago 
+        <a href="?recent_days=1&older_days=0&rdf_filters={{ rdf_filters | urlencode}}">
            today
         </a>
-        <a href="?recent_days={{ (recent_days-1) | urlencode}}&older_days={{ (older_days-1) | urlencode  }}">
+        <a href="?recent_days=7&older_days=0&rdf_filters={{ rdf_filters | urlencode}}">
+           last week
+        </a>
+        <a href="?recent_days={{ (recent_days-span_days) | urlencode}}&older_days={{ (older_days-span_days) | urlencode  }}&rdf_filters={{ rdf_filters | urlencode}}">
             future
         </a>
-        <a href="?recent_days={{ (recent_days+1) | urlencode}}&older_days={{ (older_days+1) | urlencode  }}">
+        <a href="?recent_days={{ (recent_days+span_days) | urlencode}}&older_days={{ (older_days+span_days) | urlencode  }}&rdf_filters={{ rdf_filters | urlencode}}">
             past
         </a>
+
+        &nbsp;
+           <!-- Navbar Search -->
+            <form class="d-none d-md-inline-block form-inline ml-auto mr-0 mr-md-3 my-2 my-md-0" action="">
+              <div class="input-group">
+                <input type="hidden" name="recent_days" value="{{ recent_days }}">
+                <input type="hidden" name="older_days" value="{{ older_days }}">
+                <input type="text" class="form-control" placeholder="Search for..." aria-label="Search" aria-describedby="basic-addon2" name="rdf_filters" value="{{ rdf_filters }}">
+                <div class="input-group-append">
+                  <button class="btn btn-primary" type="submit">
+                    <i class="fas fa-search"></i>
+                  </button>
+                </div>
+              </div>
+            </form>
+
     </div>
 
 

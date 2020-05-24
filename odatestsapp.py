@@ -993,6 +993,8 @@ def papers():
     recent_days=max(request.args.get('recent_days', 3, type=float), 1)
     older_days=max(request.args.get('older_days', 0, type=float), 0)
 
+    f=request.args.get('f', request.args.get('rdf_filters', ''))
+
     papers = odakb.sparql.select(f"""
                 ?paper paper:location ?location; 
                        ?p ?o;
@@ -1000,6 +1002,8 @@ def papers():
 
                 FILTER ( ?ts > {time.time()-24*3600*recent_days} )
                 FILTER ( ?ts < {time.time()-24*3600*older_days} )
+
+                {f}
             """,
             "?paper ?p ?o" , tojdict=True)
 
@@ -1007,6 +1011,7 @@ def papers():
                 papers=sorted(papers.items(), key=lambda x:-len(x[1])),
                 recent_days=recent_days,
                 older_days=older_days,
+                rdf_filters=f,
             )
 
 @app.route('/care', methods=["PUT", "GET"])
