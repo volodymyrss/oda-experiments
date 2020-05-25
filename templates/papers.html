@@ -8,14 +8,25 @@
         <a href="?recent_days=1&older_days=0&rdf_filters={{ rdf_filters | urlencode}}">
            today
         </a>
+
         <a href="?recent_days=7&older_days=0&rdf_filters={{ rdf_filters | urlencode}}">
            last week
         </a>
+
         <a href="?recent_days={{ (recent_days-span_days) | urlencode}}&older_days={{ (older_days-span_days) | urlencode  }}&rdf_filters={{ rdf_filters | urlencode}}">
             future
         </a>
+
         <a href="?recent_days={{ (recent_days+span_days) | urlencode}}&older_days={{ (older_days+span_days) | urlencode  }}&rdf_filters={{ rdf_filters | urlencode}}">
             past
+        </a>
+
+        <a href="?recent_days={{ recent_days | urlencode}}&older_days={{ older_days | urlencode  }}&rdf_filters={{ ?paper paper:source "GCN" | urlencode}}">
+           GCNs 
+        </a>
+
+        <a href="?recent_days={{ recent_days | urlencode}}&older_days={{ older_days | urlencode  }}&rdf_filters={{ ?paper paper:source "arXiv" | urlencode}}">
+           arXiv
         </a>
 
         &nbsp;
