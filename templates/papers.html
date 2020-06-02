@@ -5,8 +5,8 @@
         {% set span_days = recent_days - older_days %}
 
         {{ span_days }} from {{ older_days }} to  {{ recent_days }} days ago 
-        <a href="?recent_days=1&older_days=0&rdf_filters={{ rdf_filters | urlencode}}">
-           today
+        <a href="?recent_days=2&older_days=0&rdf_filters={{ rdf_filters | urlencode}}">
+           todays
         </a>
 
         <a href="?recent_days=7&older_days=0&rdf_filters={{ rdf_filters | urlencode}}">
