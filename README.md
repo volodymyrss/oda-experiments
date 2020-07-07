@@ -16,3 +16,8 @@ The features are constructed with reasoning rules from a collection of facts pro
 
 
 Described [here](https://doi.org/10.5281/zenodo.3560567) and [here](https://doi.org/10.5281/zenodo.3559528).
+
+
+## Other similar options
+
+https://hypothesis.readthedocs.io/en/latest/
