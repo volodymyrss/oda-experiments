@@ -1,4 +1,6 @@
-# oda-tests
+# ODA Experiments: dynamic workflow composition for testing, experiments, and publishing
+
+Experiments are end-to-end live platform *tests* as well as other workflows constructed from those available in the KB.
 
 * KG keeps descriptions of workflows, describing for each:
   * an _execution workflow_  (another workflow, which takes workflow as an input)
