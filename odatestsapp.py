@@ -4,6 +4,7 @@ from flask import render_template,make_response,request,jsonify, send_from_direc
 import pprint
 import click
 import copy
+import re
 
 from odaworkflow import validate_workflow, w2uri
 
@@ -1025,6 +1026,37 @@ def care_uri():
 
     odakb.sparql.insert(f'{nuri(whouri)} oda:cares_about {nuri(paperuri)}')
     odakb.sparql.insert(f'{nuri(paperuri)} oda:cared_about_by {nuri(whouri)}')
+
+    return jsonify(dict(status="ok"))
+
+@app.route('/objects', methods=["GET"])
+def list_objects():
+    log_request()
+
+    objects = odakb.sparql.select(f"""
+                ?object <http://ddahub.io/ontology/analysis#importantIn> <http://ddahub.io/ontology/analysis#iqla>;
+                        ?p ?o .
+            """,
+            "?object ?p ?o" , tojdict=True)
+
+    return render_template("objects.html",
+                objects=sorted(objects.items()),
+            )
+
+@app.route('/add-object', methods=["PUT", "GET"])
+def add_object():
+    log_request()
+
+    rdf_init()
+
+    object_name = request.args.get('object_name').replace("\"", "").strip()
+
+    if object_name == "":
+        return "empty object name!", 400
+
+    uri = "an:" + ( re.sub("[^a-zA-Z0-9]+", "_", object_name).lower().strip("_"))
+
+    odakb.sparql.insert(f'{nuri(uri)} an:name "{object_name}"')
 
     return jsonify(dict(status="ok"))
 

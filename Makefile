@@ -8,6 +8,8 @@ run: build
                 -p 8100:8000 \
                 -it \
 	        --rm \
+			    -e JENA_PASSWORD=$(shell cat ~/.jena-password ) \
+					-e LOGSTASH_ENTRYPOINT=cdcihn:5001 \
 	        -e ODATESTS_BOT_PASSWORD=$(shell cat testbot-password.txt) \
 	        -e ODATESTS_SECRET_KEY=$(shell cat secret-key.txt) \
                 --name $(CONTAINER) $(IMAGE)
