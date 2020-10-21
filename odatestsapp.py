@@ -1057,6 +1057,7 @@ def add_object():
     uri = "an:" + ( re.sub("[^a-zA-Z0-9]+", "_", object_name).lower().strip("_"))
 
     odakb.sparql.insert(f'{nuri(uri)} an:name "{object_name}"')
+    odakb.sparql.insert(f'{nuri(uri)} an:importantIn an:iqla')
 
     return jsonify(dict(status="ok"))
 
