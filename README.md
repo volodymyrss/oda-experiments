@@ -1,5 +1,6 @@
 # ODA Experiments: dynamic workflow composition for testing, experiments, and publishing
 
+
 Experiments are end-to-end live platform *tests* as well as other workflows constructed from those available in the KB.
 
 * KG keeps descriptions of workflows, describing for each:
@@ -23,3 +24,6 @@ Described [here](https://doi.org/10.5281/zenodo.3560567) and [here](https://doi.
 ## Other similar options
 
 https://hypothesis.readthedocs.io/en/latest/
+
+Program synthesis  https://synthesis.to/papers/phd_thesis.pdf
+
