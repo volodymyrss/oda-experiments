@@ -1,4 +1,5 @@
-REPO=admin.reproducible.online/oda-tests
+REPO=odahub/oda-experiments
+#REPO=admin.reproducible.online/oda-tests
 IMAGE=$(REPO):$(shell git describe --always)
 CONTAINER=odatests
 
