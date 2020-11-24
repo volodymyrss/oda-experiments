@@ -29,4 +29,17 @@ test:
 	mypy *.py
 	pylint -E  *.py
 
+worker: build
+	docker rm -f $(CONTAINER) || true
+	docker run \
+		-it \
+		--rm \
+		-e JENA_PASSWORD=$(shell cat ~/.jena-password ) \
+		-e LOGSTASH_ENTRYPOINT=cdcihn:5001 \
+		-e ODATESTS_BOT_PASSWORD=$(shell cat testbot-password.txt) \
+		-e ODATESTS_SECRET_KEY=$(shell cat secret-key.txt) \
+		--entrypoint python \
+		--name $(CONTAINER) $(IMAGE) \
+		/odaworker.py worker
+
 .FORCE:

@@ -1,6 +1,9 @@
-import subprocess
 import requests
 import time
+import sys
+from subprocess import PIPE, Popen, STDOUT
+from threading  import Thread
+from queue import Queue, Empty
 
 import os
 import re
@@ -8,16 +11,16 @@ import re
 class UnsupportedCallType(Exception):
     pass
 
-def run(w):
+def run(w, timeout):
     print("run this", w)
 
     if w['base']['call_type'] == "http://odahub.io/ontology#python_function" \
         and w['base']['call_context'] == "http://odahub.io/ontology#python3":
-            return run_python_function(w)
+            return run_python_function(w, timeout=timeout)
 
     raise UnsupportedCallType("unable to run this calltype:", w['base']['call_type'])
 
-def run_python_function(w):
+def run_python_function(w, timeout=600):
     try:
         url, func = w['base']['location'].split("::")
     except Exception as e:
@@ -41,12 +44,10 @@ def run_python_function(w):
             return dict(result=result, status=status)
 
 
-    import subprocess
-
     if re.match("https://raw.githubusercontent.com/volodymyrss/oda_test_kit/+[0-9a-z]+?/test_[a-z0-9]+?.py", url):
         print("found valid url", url)
     else:
-        raise Exception("invalid url: %s!"%url)
+        raise UnsupportedCallType("invalid url: %s!"%url)
     
     if re.match("test_[a-z0-9]+?", func):
         print("found valid func:", func)
@@ -80,33 +81,65 @@ def run_python_function(w):
 
     print("calling python with:\n", "\n>".join(c.split("\n")))
 
-    p = subprocess.Popen(["python"], 
-                            stdin=subprocess.PIPE, 
-                            stdout=subprocess.PIPE, 
-                            stderr=subprocess.STDOUT, 
-                            env={**os.environ, "PYTHONUNBUFFERED":"1"},
-                            bufsize=0)
+
+    stdout = ""
+
+    p = Popen(["python"], 
+                          stdin=PIPE, 
+                          stdout=PIPE, 
+                          stderr=STDOUT, 
+                          env={**os.environ, "PYTHONUNBUFFERED":"1"},
+                          bufsize=0)
 
     p.stdin.write(c.encode())
 
     p.stdin.close()
 
-    stdout = ""
-    for l in p.stdout:
-        print("> ", l.decode().strip())
-        stdout += l.decode()
-    
-    p.wait()
+    def enqueue_output(out, queue):
+        for line in iter(out.readline, b''):
+            queue.put(line)
+        out.close()
 
+    q = Queue()
+    t = Thread(target=enqueue_output, args=(p.stdout, q))
+    t.daemon = True 
+    t.start()
+
+    time_spent = 0
+    while True:
+        try:
+            l = q.get_nowait() # or q.get(timeout=.1)
+        except Empty:
+            print('no output', time_spent, 's since start')
+            if p.poll() is not None:
+                print('\033[32mterminated!\033[0m')
+                break
+            time.sleep(1)
+            time_spent += 1
+            if time_spent > timeout:
+                print('\033[31mtimeout exceeded, killing\033[0m')
+                p.kill()
+                p.returncode = -1
+                break
+        else: # got line
+            print("> ", l.decode().strip())
+            stdout += l.decode()
+        time.sleep(0.01)
+
+    
     print("exited as ", p.returncode)
 
     
     if p.returncode == 0:
         result = dict(stdout=stdout)
         status = 'success'
+
+        print("\033[32mSUCCESS!\033[0m")
     else:
         result = dict(stdout=stdout, exception=p.returncode)
         status = 'failed'
+
+        print("\033[31mFAILED!\033[0m")
 
 
     return dict(result=result, status=status)

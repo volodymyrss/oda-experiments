@@ -27,7 +27,9 @@ def cli():
 @click.option("-u", "--url", default="http://in.internal.odahub.io/odatests")
 @click.option("-1", "--one-shot", is_flag=True, default=False)
 @click.option("-n", "--dry-run", is_flag=True, default=False)
-def worker(url, dry_run, one_shot):
+@click.option("-t", "--timeout", default=600)
+@click.option("-p", "--period", default=35)
+def worker(url, dry_run, one_shot, timeout, period):
     rdf_init()
 
     nskip=0
@@ -42,14 +44,14 @@ def worker(url, dry_run, one_shot):
         if r.status_code != 200:
             logger.error("problem fetching goal: %s", r)
             print(r.text)
-            time.sleep(35)
+            time.sleep(period)
             continue
 
         goal = r.json().get('goal', None)
 
         if goal is None:
             logger.warning("no more goals! sleeping")
-            time.sleep(35)
+            time.sleep(period)
             nskip=0
             continue
 
@@ -65,12 +67,12 @@ def worker(url, dry_run, one_shot):
 
         try:
             logger.info("running!")
-            data = odarun.run(goal)
+            data = odarun.run(goal, timeout=timeout)
             nskip=0
         except odarun.UnsupportedCallType:
             nskip+=1
             logger.error("has been offerred unsupported call type! we must have made wrong request; skipping to %i", nskip)
-            time.sleep(35)
+            time.sleep(period)
             continue
 
         worker = dict(hostname=socket.gethostname(), time=time.time())
@@ -86,7 +88,7 @@ def worker(url, dry_run, one_shot):
                     break
                 except Exception as e:
                     print("failed to report:", e,"retrying")
-                    time.sleep(30)
+                    time.sleep(period)
 
         else:
             print("dry run, not reporting")
@@ -95,7 +97,7 @@ def worker(url, dry_run, one_shot):
             break
 
         logger.info("sleeping too the next goal")
-        time.sleep(35)
+        #time.sleep(period)
 
 if __name__ == "__main__":
     cli()
