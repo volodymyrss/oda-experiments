@@ -159,10 +159,12 @@ class BadRequest(Exception):
 
 @app.errorhandler(BadRequest)
 def handle_error(error):
+    logger.error("\033[31m %s %\033[0m", repr(error))
     return make_response(str(error)), 400
 
 @app.errorhandler(Exception)
 def handle_bad_error(error):
+    logger.error("\033[31m BAD error: %s %\033[0m", repr(error))
     if debug:
         raise error
     else:
