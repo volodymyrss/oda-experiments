@@ -758,7 +758,7 @@ def log_request():
         request_summary['clientip']=request_summary['request-data']['headers']['X-Forwarded-For'].split(",")[0]
         logger.info(f"extracted client: {request_summary['clientip']}" )
     except Exception as e:
-        logger.info("unable to extract client")
+        logger.info("unable to extract client info: %s", e)
 
     logger.info(request_summary)
 
