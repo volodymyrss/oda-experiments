@@ -19,7 +19,10 @@ import datetime
 import yaml
 import io
 
-from ansi2html import ansi2html
+try:
+    from ansi2html import ansi2html
+except:
+    pass
 
 import subprocess
 
@@ -51,6 +54,7 @@ import json
 
 from typing import Union, List
 
+import traceback
 
 import pylogstash # type: ignore
 
@@ -164,7 +168,8 @@ def handle_error(error):
 
 @app.errorhandler(Exception)
 def handle_bad_error(error):
-    logger.error("\033[31m BAD error: %s \033[0m", repr(error))
+    logger.error("\033[31m BAD error: %s\033[0m", repr(error))
+    traceback.print_stack()
     if debug:
         raise error
     else:
