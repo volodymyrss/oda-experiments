@@ -484,7 +484,8 @@ def offer_goal():
 
             try:
                 goal = get_data(goal_uri)
-            except odakb.sparql.NoAnswers as e:
+            except Exception as e:
+            #except odakb.sparql.NoAnswers as e:
                 logger.info(f"non-existent goal {goal_uri}")
                 odakb.sparql.delete(f"<{goal_uri}> ?p ?o", all_entries=True)
                 continue
