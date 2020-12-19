@@ -303,9 +303,11 @@ def get_tests(f=None):
 
             t['expects'][binding] = r['ex_type']
 
-        logger.info("test: \n" + pprint.pformat(t))
+        logger.info("created test (have %s already): \n" + pprint.pformat(t), len(tests))
 
         tests.append(t)
+
+    logger.info("returning %s tests", len(tests))
 
     return tests
 
