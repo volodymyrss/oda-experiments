@@ -7,7 +7,7 @@ pytest-flask
 
 keyring
 
-oda-knowledge-base==0.7.1
+oda-knowledge-base[rdf,cwl]==0.7.1
 
 Flask-JWT
 
