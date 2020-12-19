@@ -14,4 +14,4 @@ ADD odaworker.py /odaworker.py
 
 RUN pip install oda-api --upgrade
 
-ENTRYPOINT gunicorn app:app -b 0.0.0.0:8000 --log-level DEBUG
+ENTRYPOINT gunicorn app:app -b 0.0.0.0:8000 --log-level DEBUG --timeout 600
