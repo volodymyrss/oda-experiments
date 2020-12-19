@@ -478,6 +478,8 @@ def offer_goal():
 
         unreached_goals = get_goals("unreached", wf=f)
 
+        logging.info("got unreached goals: %s", len(unreached_goals))
+
         if len(unreached_goals) > n:
             goal_uri = unreached_goals[n]
             #goal_uri = w2uri(goal)
@@ -488,7 +490,7 @@ def offer_goal():
                 goal = get_data(goal_uri)
             except Exception as e:
             #except odakb.sparql.NoAnswers as e:
-                logger.info(f"non-existent goal {goal_uri}")
+                logger.error(f"non-existent goal {goal_uri}")
                 odakb.sparql.delete(f"<{goal_uri}> ?p ?o", all_entries=True)
                 continue
 
