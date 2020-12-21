@@ -8,6 +8,8 @@ We leverage workflows description as simple computable expressions. Translatable
 
 Meta-WMS for interfacing with different specific engines.
 
+And a  Meta-Package-Manager.
+
 
 ##
 
