@@ -283,7 +283,8 @@ def get_tests(f=None):
 
                         NOT EXISTS { ?workflow oda:realm oda:expired }
 
-                    """ + (f or "")):
+                    """ + (f or ""),
+                    ):
         logger.info("selected workflow entry: %s", t)
 
 
@@ -1018,7 +1019,10 @@ def papers():
 
                 {f}
             """,
-            "?paper ?p ?o" , tojdict=True)
+            "?paper ?p ?o", 
+            tojdict=True,
+            limit=1000,
+            )
 
     return render_template("papers.html",
                 papers=sorted(papers.items(), key=lambda x:-len(x[1])),
