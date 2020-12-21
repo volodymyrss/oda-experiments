@@ -1003,8 +1003,8 @@ def _list_goals(f):
 def papers():
     log_request()
 
-    recent_days=max(request.args.get('recent_days', 3, type=float), 1)
-    older_days=max(request.args.get('older_days', 0, type=float), 0)
+    newer_than_days=max(request.args.get('newer_than_days', 3, type=float), 1)
+    older_than_days=max(request.args.get('older_than_days', 0, type=float), -1)
 
     f=request.args.get('f', request.args.get('rdf_filters', ''))
 
@@ -1013,8 +1013,8 @@ def papers():
                        ?p ?o;
                        paper:timestamp ?ts .
 
-                FILTER ( ?ts > {time.time()-24*3600*recent_days} )
-                FILTER ( ?ts < {time.time()-24*3600*older_days} )
+                FILTER ( ?ts > {time.time()-24*3600*newer_than_days} )
+                FILTER ( ?ts < {time.time()-24*3600*older_than_days} )
 
                 {f}
             """,
@@ -1022,8 +1022,8 @@ def papers():
 
     return render_template("papers.html",
                 papers=sorted(papers.items(), key=lambda x:-len(x[1])),
-                recent_days=recent_days,
-                older_days=older_days,
+                newer_than_days=newer_than_days,
+                older_than_days=older_than_days,
                 rdf_filters=f,
             )
 
