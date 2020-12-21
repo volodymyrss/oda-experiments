@@ -1,5 +1,15 @@
 # ODA Experiments: dynamic workflow composition for testing, experiments, and publishing
 
+## Intro
+
+Is it just another WMS? Note really.
+
+We leverage workflows description as simple computable expressions. Translatable in and interoperable with other workflow descriptions (CWL) including WMS-specific ones.
+
+Meta-WMS for interfacing with different specific engines.
+
+
+##
 
 Experiments are end-to-end live platform *tests* as well as other workflows constructed from those available in the KB.
 
