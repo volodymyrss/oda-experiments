@@ -284,6 +284,7 @@ def get_tests(f=None):
                         NOT EXISTS { ?workflow oda:realm oda:expired }
 
                     """ + (f or ""),
+                    limit=10000,
                     ):
         logger.info("selected workflow entry: %s", t)
 
@@ -364,7 +365,7 @@ def design_goals(f=None):
 
     odakb.sparql.insert(toinsert)
 
-    bucketless = odakb.sparql.select("?goal_uri a oda:testgoal . NOT EXISTS { ?goal_uri oda:bucket ?b }", form="?goal_uri")
+    bucketless = odakb.sparql.select("?goal_uri a oda:testgoal . NOT EXISTS { ?goal_uri oda:bucket ?b }", form="?goal_uri", limit=10000)
 
     toinsert = ""
     for goal_uri in [r['goal_uri'] for r in bucketless]:
@@ -422,7 +423,7 @@ def get_goals(f="all", wf=None):
         q += wf
     
     try:
-        r = odakb.sparql.select(q)
+        r = odakb.sparql.select(q, limit=10000)
     except odakb.sparql.NoAnswers:
         return []
 
@@ -590,7 +591,9 @@ def list_data(f=None):
             NOT EXISTS {{ ?workflow oda:realm oda:expired }}
             
             { f or "" }
-                      """)
+                      """,
+            limit=10000,
+                      )
 
     logger.info(f"found {len(r)} entries")
 
