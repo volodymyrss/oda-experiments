@@ -1,4 +1,4 @@
-FROM python:3.6
+FROM python:3.8
 
 ADD requirements.txt /requirements.txt
 RUN pip install --upgrade pip
@@ -12,6 +12,5 @@ ADD odarun.py /odarun.py
 ADD odaworkflow.py /odaworkflow.py
 ADD odaworker.py /odaworker.py
 
-RUN pip install oda-api --upgrade
 
 ENTRYPOINT gunicorn app:app -b 0.0.0.0:8000 --log-level DEBUG --timeout 600

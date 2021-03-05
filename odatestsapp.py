@@ -19,6 +19,8 @@ import datetime
 import yaml
 import io
 
+from astropy.coordinates import SkyCoord
+
 try:
     from ansi2html import ansi2html
 except:
@@ -1067,18 +1069,61 @@ def add_object():
     log_request()
 
     rdf_init()
+    
+    comments = []
 
     object_name = request.args.get('object_name').replace("\"", "").strip()
+    coordinates = request.args.get('coordinates', '').replace("\"", "").strip()
 
     if object_name == "":
         return "empty object name!", 400
 
     uri = "an:" + ( re.sub("[^a-zA-Z0-9]+", "_", object_name).lower().strip("_"))
+    
+    inserts = [
+                 f'{nuri(uri)} an:name "{object_name}"',
+                 f'{nuri(uri)} an:importantIn an:iqla',
+              ]
+    
+    if coordinates != "":
+        skycoord = None
+        failures=[]
+        for unit in "deg", "hourangle,deg":
+            try:
+                skycoord = SkyCoord(coordinates, unit=unit)
+                comments.append({
+                    "coordinates interpretted as": {
+                            "unit": unit,
+                            "value": str(skycoord),
+                        }
+                    })
+                logger.info("coordinates %s can interpreted as %s", coordinates, unit)
 
-    odakb.sparql.insert(f'{nuri(uri)} an:name "{object_name}"')
-    odakb.sparql.insert(f'{nuri(uri)} an:importantIn an:iqla')
+                inserts.append(
+                            f'{nuri(uri)} an:ra {skycoord.ra.deg:.7g}'
+                        )
+                inserts.append(
+                            f'{nuri(uri)} an:dec {skycoord.dec.deg:.7g}'
+                        )
+                break
+            except:
+                raise
+                e = "coordinates {} can not be interpreted as {}".format(coordinates, unit)
+                failures.append(e)
+                logger.warning(e)
 
-    return jsonify(dict(status="ok"))
+        if skycoord is None:
+            return jsonify(failures), 400
+
+
+    try:
+        for q in inserts:
+            odakb.sparql.insert(q)
+    except odakb.sparql.SPARQLException as e:
+        logger.exception("\033[31mproblem in sparql query %s\033[0m; was submitting %s, %s", e, q)
+        return jsonify(dict(status="NOT ok"))
+    else:
+        return jsonify(dict(status="ok", comments=comments))
 
 if __name__ == "__main__":
     cli()
