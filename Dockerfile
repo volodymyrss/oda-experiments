@@ -13,4 +13,4 @@ ADD odaworkflow.py /odaworkflow.py
 ADD odaworker.py /odaworker.py
 
 
-ENTRYPOINT gunicorn app:app -b 0.0.0.0:8000 --log-level DEBUG --timeout 600
+ENTRYPOINT gunicorn app:app -b 0.0.0.0:8000 -w 8 --log-level DEBUG --timeout 600
