@@ -6,7 +6,11 @@ def test_status(client):
     print(r, r.json)
 
 def test_get(client):
-    r = client.get(url_for("tests_get"))
+    url = url_for("tests_get")
+
+    print("url:", url)
+
+    r = client.get(url)
     print(r, r.json)
 
 def test_get_f(client):

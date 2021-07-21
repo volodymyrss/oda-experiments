@@ -11,7 +11,7 @@ import re
 class UnsupportedCallType(Exception):
     pass
 
-def run(w, timeout):
+def run(w, timeout=600):
     print("run this", w)
 
     if w['base']['call_type'] == "http://odahub.io/ontology#python_function" \

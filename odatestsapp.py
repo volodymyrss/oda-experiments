@@ -145,7 +145,7 @@ def create_app():
     app.wsgi_app = ReverseProxied(app.wsgi_app)
     app.debug = True
     app.config['SECRET_KEY'] = os.environ.get("ODATESTS_SECRET_KEY")
-    app.config["APPLICATION_ROOT"] = "/odatests"
+    app.config["APPLICATION_ROOT"] = os.environ.get("APPLICATION_ROOT", "/")
 
     jwt = JWT(app, authenticate, identity)
     return app
@@ -163,8 +163,16 @@ def timestamp2isot_filter(arg):
 class BadRequest(Exception):
     pass
 
+class KGContentError(Exception):
+    pass
+
 @app.errorhandler(BadRequest)
 def handle_error(error):
+    logger.error("\033[31m %s \033[0m", repr(error))
+    return make_response(str(error)), 400
+
+@app.errorhandler(KGContentError)
+def handle_kg_error(error):
     logger.error("\033[31m %s \033[0m", repr(error))
     return make_response(str(error)), 400
 
@@ -637,10 +645,14 @@ def list_data(f=None):
 
     return sorted(result, key=lambda x:-x.get('timestamp',0))
 
+
+
 def get_data(uri):
-    r = odakb.sparql.select_one("""
-            {data} oda:bucket ?bucket . 
-                     """.format(data=odakb.sparql.render_uri(uri)))
+    selection = f"{odakb.sparql.render_uri(uri)} oda:bucket ?bucket . "
+    try:
+        r = odakb.sparql.select_one(selection)
+    except odakb.sparql.ManyAnswers as e:
+        raise KGContentError(f"{repr(e)}: \"{selection}\"")
 
     b = odakb.datalake.restore(r['bucket'])
 
