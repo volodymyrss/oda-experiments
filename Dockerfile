@@ -15,4 +15,4 @@ ADD odaexperiments /odaexperiments
 #ADD odaworkflow.py /odaworkflow.py
 #ADD odaworker.py /odaworker.py
 
-ENTRYPOINT PYTHONPATH=/:$PYTHONPATH gunicorn app:app -b 0.0.0.0:8000 -w 8 --log-level DEBUG --timeout 600
+ENTRYPOINT PYTHONPATH=/:$PYTHONPATH gunicorn odaexperiments.app:app -b 0.0.0.0:8000 -w 8 --log-level DEBUG --timeout 600
