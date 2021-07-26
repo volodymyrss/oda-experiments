@@ -148,7 +148,10 @@ def run_python_function(w, timeout=600):
 
         print("\033[31mFAILED!\033[0m")
 
-    result['func_return'] = json.loads(re.search("^RESULT:(.*)", stdout).group(1))
+    try:
+        result['func_return'] = json.loads(re.search("^RESULT:(.*)", stdout, re.M).group(1))
+    except Exception as e:
+        print("no output")
 
     return dict(result=result, status=status)
 
