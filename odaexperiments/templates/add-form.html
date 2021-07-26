@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+{% block content %}
+      
+<form action="tests/add">
+  <div class="form-group">
+    <label for="uri">Workflow URI</label>
+    <input name="uri" type="text" class="form-control" id="uri" aria-describedby="uriHelp" placeholder="Enter URI" value="{{ uri }}">
+    <small id="uriHelp" class="form-text text-muted">e.g. "oda:test_verygoodtest"</small>
+  </div>
+  <div class="form-group">
+    <label for="location">Workflow URL</label>
+    <input name="location" type="text" class="form-control" id="location" placeholder="url" value="{{ location }}">
+    <small id="locationHelp" class="form-text text-muted">e.g. "https://raw.githubusercontent.com/volodymyrss/oda_test_kit/2421737/test_lc.py::test_lcpick_largebins"</small>
+  </div>
+  <div class="form-group">
+    <label for="extra_rdf">Extra relations</label>
+    <input name="extra_rdf" type="text" class="form-control" id="" placeholder="some rdf">
+    <small id="extra_rdfHelp" class="form-text text-muted">e.g. oda:domain oda:osa</small>
+  </div>
+  <div class="form-group">
+    <label for="submitter_email">Submitter (email)</label>
+    <input name="submitter_email" type="email" class="form-control" id="submitter_email" placeholder="email" value="{{ email }}">
+  </div>
+  <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+
+{% endblock %}

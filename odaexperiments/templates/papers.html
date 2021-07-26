@@ -1,0 +1,184 @@
+{% extends "layout.html" %}
+{% block content %}
+
+    <div class="container p-3">
+        {% set span_days = newer_than_days - older_than_days %}
+
+        {{ span_days }} from {{ older_than_days }} to  {{ newer_than_days }} days ago 
+        <a href="?newer_than_days=2&older_than_days=0&rdf_filters={{ rdf_filters | urlencode}}">
+           todays
+        </a>
+
+        <a href="?newer_than_days=7&older_than_days=0&rdf_filters={{ rdf_filters | urlencode}}">
+           last week
+        </a>
+
+        <a href="?newer_than_days={{ (newer_than_days-span_days) | urlencode}}&older_than_days={{ (older_than_days-span_days) | urlencode  }}&rdf_filters={{ rdf_filters | urlencode}}">
+            future
+        </a>
+
+        <a href="?newer_than_days={{ (newer_than_days+span_days) | urlencode}}&older_than_days={{ (older_than_days+span_days) | urlencode  }}&rdf_filters={{ rdf_filters | urlencode}}">
+            past
+        </a>
+
+        <a href="?newer_than_days={{ newer_than_days | urlencode}}&older_than_days={{ older_than_days | urlencode  }}&rdf_filters={{ '?paper paper:source "GCN"' | urlencode}}">
+           GCNs 
+        </a>
+
+        <a href="?newer_than_days={{ newer_than_days | urlencode}}&older_than_days={{ older_than_days | urlencode  }}&rdf_filters={{ '?paper paper:source "arXiv"' | urlencode}}">
+           arXiv
+        </a>
+        
+        <a href="?newer_than_days={{ newer_than_days | urlencode}}&older_than_days={{ older_than_days | urlencode  }}&rdf_filters={{ '?paper paper:source "ATel"' | urlencode}}">
+           ATel 
+        </a>
+
+        &nbsp;
+           <!-- Navbar Search -->
+            <form class="d-none d-md-inline-block form-inline ml-auto mr-0 mr-md-3 my-2 my-md-0" action="">
+              <div class="input-group">
+                <input type="hidden" name="newer_than_days" value="{{ newer_than_days }}">
+                <input type="hidden" name="older_than_days" value="{{ older_than_days }}">
+                <input type="text" class="form-control" placeholder="Search for..." aria-label="Search" aria-describedby="basic-addon2" name="rdf_filters" value="{{ rdf_filters }}">
+                <div class="input-group-append">
+                  <button class="btn btn-primary" type="submit">
+                    <i class="fas fa-search"></i>
+                  </button>
+                </div>
+              </div>
+            </form>
+
+    </div>
+
+
+  <table class="table table-striped table-sm">
+
+    <thead class="thead">
+     <tr>
+       <th>URI</th>
+       <th>Title</th>
+       <th>Facts</th>
+       <th>Workflows
+           <a href="#">
+           <svg class="bi bi-info-square" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                 <path fill-rule="evenodd" d="M14 1H2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/>
+                   <path d="M8.93 6.588l-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588z"/>
+                     <circle cx="8" cy="4.5" r="1"/>
+           </svg>
+           </a>
+       </th>
+     </tr>
+    </thead>
+
+    {% for pid, p in papers %}
+        <tr>
+            <td>
+                {% for l in p['paper:location'] %}
+                    <a href="{{ l }}">{{ pid }}</a>
+                {% endfor %}
+                <br>
+                {% for l in p['paper:timestamp'] %}
+                    {{ l | timestamp2isot }}
+                {% endfor %}
+            </td>
+            <td>
+                {% for t in p['paper:title'] %}
+                    {{ t }}
+                {% endfor %}
+            </td>
+            <td> 
+                {% set rowid = pid.replace(":","-").replace(".", "-") %}
+
+                <div id="accordion">
+                    <button class="btn btn-link" data-toggle="collapse" data-target="#collapse{{ rowid }}">
+                        {% for k,v in p.items() %}
+                        {% if k not in ['@id', 'paper:location', 'paper:title'] and 'times' not in k and 'updated' not in k%}
+                                {{ k.split(":")[1] }}
+                        {% endif %}
+                        {% endfor %}
+                    </button>
+
+                    <div id="collapse{{ rowid }}" class="collapse" data-parent="#accordion">
+                        <small>
+                        <ol>
+                        {% for k,v in p.items() %}
+                        {% if k not in ['@id', 'paper:location', 'paper:title']%}
+                            <li>
+                                {{ k }}: {{ v }}
+                            </li>
+                        {% endif %}
+                        {% endfor %}
+                        </ol>
+                        </small>
+                    </div>
+                </div>
+
+                </td>
+                <td>
+                <div id="accordion">
+                    <button class="btn btn-sm btn-primary" data-toggle="collapse" data-target="#collapse-wfl-{{ rowid }}">
+                        Explore
+                    </button>
+
+                    <div id="collapse-wfl-{{ rowid }}" class="collapse" data-parent="#accordion">
+                <table>
+                    <tr>
+                    <td>
+                    paper origin
+                    </td>
+                    <td>
+                        <small >
+                    fetch-workflow-{{ pid }}
+                        </small>
+                    </td>
+                    <td>
+                        <div class="span2">
+                            <button type="button" class="btn btn-sm btn-block btn-primary" 
+                                                  onclick="window.open('compute?paper-uri={{ pid | urlencode }}','_blank');">Run</button>
+                        </div>
+                    </td>
+                    </tr>
+
+                    <tr>
+                    <td>
+                        INTEGRAL follow-up
+                    </td>
+                    <td>
+                        <small >
+                        </small>
+                    </td>
+                    <td>
+                        <div class="span2">
+                            <button type="button" class="btn btn-sm btn-block btn-primary" 
+                                                  onclick="window.open('compute?paper-uri={{ pid | urlencode }}','_blank');">Run</button>
+                        </div>
+                    </td>
+                    </tr>
+
+                    <tr>
+                    <td>
+                    my affinity
+                    </td>
+                    <td>
+                        <small >
+                    oda:me oda:cares_for {{ pid }}
+                        </small>
+                    </td>
+                    <td>
+                        <div class="span2">
+                            <button type="button" class="btn btn-sm btn-block btn-success" 
+                                                  onclick="window.open('care?paper-uri={{ pid | urlencode }}','_blank');">Care</button>
+                            <button type="button" class="btn btn-sm btn-block btn-danger" 
+                                                  onclick="$.get('expire?uri=', function (data) {alert(data); })">Uncare</button>
+                        </div>
+                    </td>
+                    </tr>
+                </table>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    {% endfor %}
+
+  </table>
+{% endblock %}

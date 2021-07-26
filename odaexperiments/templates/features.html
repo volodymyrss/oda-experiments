@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+{% block content %}
+
+    <div class="container p-3">
+    {% for wd in domains %}
+        <a href="view-data?f={{ ("?workflow oda:domain <"+wd+">") | urlencode }}">
+        {{ wd.replace("http://odahub.io/ontology", "") }} 
+        </a>
+    {% endfor %}
+    </div>
+
+  <table class="table table-striped table-sm">
+
+    <thead class="thead">
+     <tr>
+       <th>URI</th>
+       <th>Short description</th>
+       <th>Proven By</th>
+     </tr>
+    </thead>
+
+    {% for fn, f in features.items() %}
+        <tr>
+            <td>{{ f["@id"] | uri | safe}}</td>
+            <td>{{ f["oda:descr"][0] }}</td>
+            <td>
+                {% for pb, pbd in f["oda:provenBy"].items() %}
+                    <a href="workflow?uri={{ pbd["@id"] | urlencode }}">{{ pb }}</a>
+                {% endfor %}
+            </td>
+        </tr>
+    {% endfor %}
+
+  </table>
+{% endblock %}

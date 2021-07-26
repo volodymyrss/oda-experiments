@@ -1,0 +1,85 @@
+{% extends "layout.html" %}
+{% block content %}
+
+    <div class="container-xl">
+    {% for wd in (domains|sort) %}
+        <a href="data?f={{ ("?workflow oda:domain <"+wd+">") | urlencode }}">
+        {{ wd.replace("http://odahub.io/ontology", "") }} 
+        </a>
+    {% endfor %}
+
+    {% for ts in timestamps %}
+        <a href="data?f={{ ( "?data oda:curryied_input_timestamp \""+ts[1]+"\"") | urlencode }}">
+        {{ ((tnow-ts[0])/3600) | round(1) }}h ago &nbsp;
+        </a>
+    {% endfor %}
+    </div>
+
+  <table class="table table-striped table-sm">
+
+    <thead class="thead">
+     <tr>
+       <th>URI</th>
+       <th>Workflow</th>
+       <th>Domain</th>
+       <th>Status</th>
+       <th>Inputs</th>
+       <th>Input Timestamp</th>
+       <th>Actions</th>
+     </tr>
+    </thead>
+
+    {% for d in data %}
+        {% set status_class =   {'http://odahub.io/ontology#success': 'success', 
+                                 'http://odahub.io/ontology#failed': 'danger',
+                                 'http://odahub.io/ontology#obsolete': 'warning' 
+                                 }[d.test_status] %}
+        {% set status_message = {'http://odahub.io/ontology#success': 'SUCCESS', 
+                                 'http://odahub.io/ontology#failed': 'FAIL',
+                                 'http://odahub.io/ontology#obsolete': 'OBSOLETE' 
+                                 }[d.test_status] 
+                                 %}
+        <tr>
+            <td>{{d.uri | uri("data") | safe}}</td>
+            <td><a href="workflow?uri={{d.workflow | urlencode}}"> {{d.workflow.replace("http://odahub.io/ontology#", "")}}</a><a href="graph?uri={{d.workflow | urlencode}}"><img class="button" src="static/img/rdf.svg"/></a></td>
+            <td>
+                {% for wd in  d.workflow_domains %}
+                    <a href="data?f={{ ("?workflow oda:domain <"+wd+">") | urlencode }}">
+                    {{ wd.replace("http://odahub.io/ontology", "") }} 
+                    </a>
+                {% endfor %}
+            </td>
+
+            <td class="{{ status_class }} text-{{status_class}} text-center">{{ status_message }}</td>
+            <td>
+                <small>
+                <ul>
+                {% for v in d.inputs %}
+                    {% if v.input_binding != "http://odahub.io/ontology#curryied_input_timestamp" %}
+                    <li>
+                        <b>{{v.input_binding.replace("http://odahub.io/ontology#curryied_input_","")}}</b> = 
+                            {{v.input_value.replace("http://odahub.io/ontology#","")}}</span>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                </ul>
+                </small>
+            </td>
+            <td>
+                {% if d.timestamp %}
+                    {{ d.timestamp }} 
+                    <span class="text-info">
+                    ({{ d.timestamp_age_h | round(1)}} h ago)
+                    </span>
+                {% endif %}
+            </td>
+            <td>
+                <div class="span2">
+                    <button type="button" class="btn btn-sm btn-block btn-danger">Expire</button>
+                </div>
+            </td>
+        </tr>
+    {% endfor %}
+
+  </table>
+{% endblock %}
