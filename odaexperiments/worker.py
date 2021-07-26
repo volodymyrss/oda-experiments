@@ -10,8 +10,8 @@ import socket
 import time
 import json
 
-import odarun
-from odaworkflow import validate_workflow, w2uri
+import odaexperiments.run as odarun
+from odaexperiments.workflow import validate_workflow, w2uri
 from odakb.sparql import nuri # type: ignore
 from odakb.sparql import init as rdf_init
 
