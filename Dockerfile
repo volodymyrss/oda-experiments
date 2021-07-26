@@ -16,5 +16,7 @@ ADD odaexperiments /odaexperiments
 #ADD odaworker.py /odaworker.py
 
 ENV PYTHONPATH=/
+ENV XDG_CACHE_HOME=/tmp
+ENV MPLCONFIGDIR=/tmp
 
 ENTRYPOINT gunicorn odaexperiments.app:app -b 0.0.0.0:8000 -w 8 --log-level DEBUG --timeout 600
