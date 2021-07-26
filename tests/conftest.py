@@ -1,6 +1,6 @@
 import pytest
 
-import odatestsapp 
+import odaexperiments.app as odatestsapp
 
 @pytest.fixture
 def app():

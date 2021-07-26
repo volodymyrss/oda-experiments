@@ -37,7 +37,7 @@ def test_post(client):
 def test_testgoals(client):
     from odakb.sparql import nuri
 
-    import odatestsapp
+    import odaexperiments.app as odatestsapp
     odatestsapp.design_goals()
 
     r = client.get(url_for("goals_get"))
@@ -81,14 +81,10 @@ def test_testgoals(client):
     assert u not in r_unr
 
 def test_design(client):
-    import odatestsapp
+    import odaexperiments.app as odatestsapp
     goals = odatestsapp.design_goals()
 
     print(goals)
-
-def test_list_testresults(client):
-    r = client.get(url_for("data"))
-    print(r.json)
 
 def test_view_testresults(client):
     r = client.get(url_for("viewdata"))
@@ -140,4 +136,28 @@ def test_unexpected(client):
     assert r.status_code == 500
 
     print(r)
+
+
+def test_run(client):
+    import odaexperiments.run as odarun
+
+    r = odarun.run(
+        dict(
+            base = dict(
+                call_type="http://odahub.io/ontology#python_function",
+                call_context="http://odahub.io/ontology#python3",
+                location="https://raw.githubusercontent.com/volodymyrss/oda_test_kit/a86f682292e6233247bb299e5b4b5155faeaf214/odaplatform.py::platform_endpoint"                
+            ),
+            inputs=dict(
+                cdciplatform="production"
+            )
+        )
+    )
+
+    assert r['result']['func_return'] == 'https://www.astro.unige.ch/mmoda/dispatch-data'
+
+def test_run_test_func():
+    import odaexperiments.run as odarun
+    f = odarun.test_func("odaplatform", "platform_endpoint")
+    assert f(cdciplatform="production") == 'https://www.astro.unige.ch/mmoda/dispatch-data'
 

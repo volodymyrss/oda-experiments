@@ -6,7 +6,7 @@ import click
 import copy
 import re
 
-from odaworkflow import validate_workflow, w2uri
+from odaexperiments.workflow import validate_workflow, w2uri
 
 import requests
 
@@ -49,7 +49,7 @@ from collections import OrderedDict, defaultdict
 import glob
 import logging
 
-import odarun
+import odaexperiments.run as odarun
 
 import jsonschema # type: ignore
 import json

@@ -1,6 +1,6 @@
 import requests
 import time
-import sys
+import json
 from subprocess import PIPE, Popen, STDOUT
 from threading  import Thread
 from queue import Queue, Empty
@@ -17,8 +17,9 @@ def run(w, timeout=600):
     if w['base']['call_type'] == "http://odahub.io/ontology#python_function" \
         and w['base']['call_context'] == "http://odahub.io/ontology#python3":
             return run_python_function(w, timeout=timeout)
-
-    raise UnsupportedCallType("unable to run this calltype:", w['base']['call_type'])
+    
+    return dict(result={}, status='unsupported')
+    # raise UnsupportedCallType("unable to run this calltype:", w['base']['call_type'])
 
 def run_python_function(w, timeout=600):
     try:
@@ -42,20 +43,24 @@ def run_python_function(w, timeout=600):
             status = 'obsolete'
 
             return dict(result=result, status=status)
-
-
-    if re.match("https://raw.githubusercontent.com/volodymyrss/oda_test_kit/+[0-9a-z]+?/test_[a-z0-9]+?.py", url):
+    
+    #if re.match("https://raw.githubusercontent.com/volodymyrss/oda_test_kit/+[0-9a-z]+?/test_[a-z0-9]+?.py", url):
+    if re.match("https://raw.githubusercontent.com/volodymyrss/oda_test_kit/+[0-9a-z]+?/[a-z0-9_]+?.py", url):
         print("found valid url", url)
     else:
         raise UnsupportedCallType("invalid url: %s!"%url)
     
-    if re.match("test_[a-z0-9]+?", func):
+    #if re.match("test_[a-z0-9]+?", func):
+    if re.match("[a-z0-9_]+?", func):
         print("found valid func:", func)
     else:
         raise Exception("invalid func: %s!"%func)
 
 
     urls = [
+            url.replace("https://raw.githubusercontent.com/volodymyrss/oda_test_kit/", 
+                        "https://raw.githubusercontent.com/oda-hub/oda_test_kit/"
+                        ),        
             url.replace("https://raw.githubusercontent.com/volodymyrss/oda_test_kit/", 
                         "https://gitlab.astro.unige.ch/savchenk/osa_test_kit/raw/"
                         ),
@@ -77,7 +82,9 @@ def run_python_function(w, timeout=600):
         raise Exception("all urls failed!")
 
     c = r.text
-    c += "\n\n%s(%s)"%(func, pars)
+    c += "\n\nresult=%s(%s)"%(func, pars)
+    c += "\n\nimport json"
+    c += "\n\nprint('RESULT:', json.dumps(result))"
 
     print("calling python with:\n", "\n>".join(c.split("\n")))
 
@@ -141,5 +148,22 @@ def run_python_function(w, timeout=600):
 
         print("\033[31mFAILED!\033[0m")
 
+    result['func_return'] = json.loads(re.search("^RESULT:(.*)", stdout).group(1))
 
     return dict(result=result, status=status)
+
+
+def test_func(file, func, ref="master"):
+    def _func(**kwargs):
+        return run(
+            dict(
+                base = dict(
+                    call_type="http://odahub.io/ontology#python_function",
+                    call_context="http://odahub.io/ontology#python3",
+                    location=f"https://raw.githubusercontent.com/volodymyrss/oda_test_kit/{ref}/{file}.py::{func}"                
+                ),
+                inputs=kwargs
+            )
+        )['result']['func_return']
+
+    return _func
