@@ -5,12 +5,14 @@ RUN pip install --upgrade pip
 RUN pip install -r /requirements.txt
 
 ADD workflow-schema.json /workflow-schema.json
-ADD templates /templates
+
+ADD odaexperiments/templates /templates
 ADD static /static
-ADD odatestsapp.py /app.py
-ADD odarun.py /odarun.py
-ADD odaworkflow.py /odaworkflow.py
-ADD odaworker.py /odaworker.py
 
+ADD odaexperiments /odaexperiments
+#ADD odaexperiments/app.py /app.py
+#ADD odarun.py /odarun.py
+#ADD odaworkflow.py /odaworkflow.py
+#ADD odaworker.py /odaworker.py
 
-ENTRYPOINT gunicorn app:app -b 0.0.0.0:8000 -w 8 --log-level DEBUG --timeout 600
+ENTRYPOINT PYTHONPATH=/odaexperiments:$PYTHONPATH gunicorn app:app -b 0.0.0.0:8000 -w 8 --log-level DEBUG --timeout 600
