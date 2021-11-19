@@ -7,7 +7,7 @@ RUN pip install -r /requirements.txt
 ADD workflow-schema.json /workflow-schema.json
 
 ADD odaexperiments/templates /templates
-ADD static /static
+#ADD static /static
 
 ADD odaexperiments /odaexperiments
 #ADD odaexperiments/app.py /app.py
