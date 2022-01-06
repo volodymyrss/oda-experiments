@@ -19,4 +19,7 @@ ENV PYTHONPATH=/
 ENV XDG_CACHE_HOME=/tmp
 ENV MPLCONFIGDIR=/tmp
 
+RUN adduser oda
+USER oda
+
 ENTRYPOINT gunicorn odaexperiments.app:app -b 0.0.0.0:8000 -w 8 --log-level DEBUG --timeout 600
