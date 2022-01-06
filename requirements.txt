@@ -11,7 +11,7 @@ oda-knowledge-base[rdf,cwl]>=0.7.24
 
 Flask-JWT
 
-jsonschema
+jsonschema<4.0
 
 pylogstash_context==0.1.12
 
