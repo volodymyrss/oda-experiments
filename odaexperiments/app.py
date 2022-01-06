@@ -363,7 +363,12 @@ def design_goals(f=None):
 
     byuri={}
     for goal in tgoals:
-        goal_uri = w2uri(goal, "goal")
+        try:
+            goal_uri = w2uri(goal, "goal")
+        except Exception as e:
+            logger.error('impossible to interpret this goal (skipping): %s; exception was %s', goal, e)
+            continue
+
         byuri[goal_uri] = goal
 
         toinsert += "\n {goal_uri} a oda:workflow; a oda:testgoal; oda:curryingOf {base_uri} .".format(
