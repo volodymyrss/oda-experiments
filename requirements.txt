@@ -22,3 +22,5 @@ oda-api
 astroquery
 
 prettytable
+
+logging_tree

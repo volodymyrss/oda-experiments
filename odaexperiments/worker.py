@@ -58,7 +58,6 @@ def worker(url, dry_run, one_shot, timeout, period):
 
         logger.info("goal: %s", pprint.pformat(goal))
         logger.info("got goal uri: %s", goal_uri)
-
         validate_workflow(goal)
 
         if nuri(w2uri(goal, "goal")) != nuri(goal_uri):
