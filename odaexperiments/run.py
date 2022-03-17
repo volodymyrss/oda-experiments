@@ -25,7 +25,7 @@ def run_python_function(w, timeout=600):
     try:
         url, func = w['base']['location'].split("::")
     except Exception as e:
-        raise Exception("can not split", w['base']['location'], e)
+        raise UnsupportedCallType("can not split", w['base']['location'], e)
 
     pars = ",".join(["%s=\"%s\""%(k,v) for k,v in w['inputs'].items()])
 

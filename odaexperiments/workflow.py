@@ -87,17 +87,40 @@ def _list():
 
 @workflow.command()
 @click.argument("workflow_name")
+@click.option('-R', '--regex', is_flag=True, default=False)
 @click.option('-a', '--argument', multiple=True)
-def run(workflow_name, argument):
+def run(workflow_name, argument, regex):
+    if regex:
+        workflows = [v for k, v in dict_workflows().items() if re.match(workflow_name, k)]
+    else:
+        workflows = [dict_workflows()[workflow_name]]
 
-    workflow = dict_workflows()[workflow_name]
+    summary = []
 
-    logger.debug(json.dumps(workflow, indent=4, sort_keys=True))
+    for workflow in workflows:
 
-    run_workflow({
-       "base": workflow,
-       "inputs": dict([ a.split("=", 1) for a in argument ])
-    })
+        logger.debug(json.dumps(workflow, indent=4, sort_keys=True))
+
+        try:
+            r = run_workflow({
+                "base": workflow,
+                "inputs": dict([ a.split("=", 1) for a in argument ])
+            })
+
+            logger.info(r)
+            if r['status'] == 'success':
+                summary.append({'workflow': workflow['workflow'], 'event': 'success'})
+            else:
+                logger.error('\033[31mPROBLEM\033[0m')
+                summary.append({'workflow': workflow['workflow'], 'event': 'failed'})
+                continue
+            
+        except Exception as e:
+            logger.error("exception running workflow %s: %s", workflow, e)
+            summary.append({'workflow': workflow['workflow'], 'event': 'failed'})        
+
+    for s in summary:
+        logger.info(s)
 
 
 @workflow.command()
