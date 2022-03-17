@@ -26,8 +26,17 @@ logger=logging.getLogger("odaworker.workflow")
 def cli():
     pass
 
+workflow_schema = {
+    "$id": "http://odahub.io/ontology#workflow-schema",
+    "properties": {
+        "test": {
+            "required": ["call_type", "call_context", "workflow"]
+        }
+    },
+    "required": ["base", "inputs"]
+}
 
-workflow_schema = json.loads(open("workflow-schema.json").read())
+# workflow_schema = json.loads(open("workflow-schema.json").read())
 
 def validate_workflow(w):
     jsonschema.validate(w, workflow_schema)
@@ -109,6 +118,8 @@ def replace(workflow_name, commit, test_argument, no_test, expire, regex, fix_fu
     else:
         workflows = [dict_workflows()[workflow_name]]
 
+    summary = []
+
     for workflow in workflows:
 
         logger.debug(
@@ -139,7 +150,18 @@ def replace(workflow_name, commit, test_argument, no_test, expire, regex, fix_fu
             )
 
         if new_workflow == workflow:
-            logger.error('\033[31mNO CHANGE\033[0m')
+            logger.error('\033[31mNO CHANGE\033[0m')            
+
+            if expire:
+                r = requests.get(url+"/expire",
+                        params={
+                            'uri': workflow['workflow'],
+                        })
+                logger.debug("%s, %s", r, r.text)
+                summary.append({'workflow': workflow['workflow'], 'event': 'no-change-expired'})
+            else:
+                summary.append({'workflow': workflow['workflow'], 'event': 'no-change'})
+            
             continue
 
         if no_test:
@@ -148,10 +170,12 @@ def replace(workflow_name, commit, test_argument, no_test, expire, regex, fix_fu
             r = run_workflow({
                 "base": new_workflow,
                 "inputs": dict([ a.split("=", 1) for a in test_argument ])
-            })
+            },
+                timeout=3600)
             logger.info(r)
             if r['status'] != 'success':
                 logger.error('\033[31mPROBLEM\033[0m')
+                summary.append({'workflow': workflow['workflow'], 'event': 'failed'})
                 continue
 
         r = requests.get(url+"/tests/add",
@@ -172,6 +196,12 @@ def replace(workflow_name, commit, test_argument, no_test, expire, regex, fix_fu
                             'uri': workflow['workflow'],
                         })
             logger.debug("%s, %s", r, r.text)
+            summary.append({'workflow': workflow['workflow'], 'event': 'updated-expired'})
+        else:
+            summary.append({'workflow': workflow['workflow'], 'event': 'updated-not-expired'})
+
+    for s in summary:
+        logger.info(s)
             
     
 
