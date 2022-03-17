@@ -68,9 +68,11 @@ def worker(url, dry_run, one_shot, timeout, period):
             logger.info("running!")
             data = odarun.run(goal, timeout=timeout)
             nskip=0
-        except odarun.UnsupportedCallType:
+        except odarun.UnsupportedCallType as e:
             nskip+=1
-            logger.error("has been offerred unsupported call type! we must have made wrong request; skipping to %i", nskip)
+            logger.error("has been offerred unsupported call type (%s) in %s! "
+                         "we must have made wrong request; skipping to %i", 
+                         e, goal, nskip)
             time.sleep(period)
             continue
 
