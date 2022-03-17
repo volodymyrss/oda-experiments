@@ -20,3 +20,5 @@ simpler-ansi2html
 oda-api
 
 astroquery
+
+prettytable
