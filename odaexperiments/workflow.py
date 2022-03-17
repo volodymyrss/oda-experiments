@@ -126,7 +126,12 @@ def replace(workflow_name, commit, test_argument, no_test, expire, regex, fix_fu
             "".join(["\nold >>> " + s for s in json.dumps(workflow, indent=4, sort_keys=True).split("\n")])
             )
 
-        old_commit = re.match(r'https://raw.githubusercontent.com/+volodymyrss/+oda_test_kit/+(.*?)/.*', workflow['location']).group(1)
+        r = re.match(r'https://raw.githubusercontent.com/+volodymyrss/+oda_test_kit/+(.*?)/.*', workflow['location'])
+        if r is None:
+            summary.append({'workflow': workflow['workflow'], 'event': 'no-commit-info'})            
+            continue            
+
+        old_commit = r.group(1)
         new_workflow = copy.deepcopy(workflow)
         new_workflow['location'] = new_workflow['location'].replace(old_commit, commit)
         new_workflow['workflow'] = new_workflow['workflow'].replace(old_commit, commit)
