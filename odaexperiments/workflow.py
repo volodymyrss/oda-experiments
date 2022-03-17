@@ -157,15 +157,7 @@ def replace(workflow_name, commit, test_argument, no_test, expire, regex, fix_fu
         if new_workflow == workflow:
             logger.error('\033[31mNO CHANGE\033[0m')            
 
-            if expire:
-                r = requests.get(url+"/expire",
-                        params={
-                            'uri': workflow['workflow'],
-                        })
-                logger.debug("%s, %s", r, r.text)
-                summary.append({'workflow': workflow['workflow'], 'event': 'no-change-expired'})
-            else:
-                summary.append({'workflow': workflow['workflow'], 'event': 'no-change'})
+            summary.append({'workflow': workflow['workflow'], 'event': 'no-change'})
             
             continue
 
