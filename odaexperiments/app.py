@@ -1058,6 +1058,7 @@ def care_uri():
 
     return jsonify(dict(status="ok"))
 
+
 @app.route('/objects', methods=["GET"])
 def list_objects():
     log_request()
@@ -1071,6 +1072,7 @@ def list_objects():
     return render_template("objects.html",
                 objects=sorted(objects.items()),
             )
+
 
 @app.route('/add-object', methods=["PUT", "GET"])
 def add_object():
