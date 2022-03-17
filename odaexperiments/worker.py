@@ -15,7 +15,6 @@ from odaexperiments.workflow import validate_workflow, w2uri
 from odakb.sparql import nuri # type: ignore
 from odakb.sparql import init as rdf_init
 
-logging.basicConfig(level=logging.INFO)
 logger=logging.getLogger("odaworker")
 
 @click.group()
@@ -24,7 +23,7 @@ def cli():
 
 
 @cli.command()
-@click.option("-u", "--url", default="http://in.internal.odahub.io/odatests")
+@click.option("-u", "--url", default="https://oda-experiments.obsuks1.unige.ch/")
 @click.option("-1", "--one-shot", is_flag=True, default=False)
 @click.option("-n", "--dry-run", is_flag=True, default=False)
 @click.option("-t", "--timeout", default=600)

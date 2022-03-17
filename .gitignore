@@ -1,3 +1,9 @@
 __pycache__
 testenv
 .mypy_cache
+build
+data
+dist
+*.egg-info
+secret-key.txt
+problematic-rdf.ttl

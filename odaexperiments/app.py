@@ -108,19 +108,10 @@ def identity(payload):
 n_failed_retries = int(os.environ.get('DQUEUE_FAILED_N_RETRY','20'))
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-#handler=logging.StreamHandler()
-#logger.addHandler(handler)
-#formatter = logging.Formatter('%(asctime)s %(levelname)8s %(name)s | %(message)s')
-#handler.setFormatter(formatter)
 
 def log(*args,**kwargs):
     severity=kwargs.get('severity','warning').upper()
     logger.info(getattr(logging,severity)," ".join([repr(arg) for arg in list(args)+list(kwargs.items())]))
-
-
-
-
 
 
 class ReverseProxied(object):
