@@ -138,6 +138,10 @@ def replace(workflow_name, commit, test_argument, no_test, expire, regex, fix_fu
             "".join(["\nnew <<< " + s for s in json.dumps(new_workflow, indent=4, sort_keys=True).split("\n")])
             )
 
+        if new_workflow == workflow:
+            logger.error('\033[31mNO CHANGE\033[0m')
+            continue
+
         if no_test:
             logger.warning('skipping test')
         else:
