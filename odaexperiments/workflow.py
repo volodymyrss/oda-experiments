@@ -224,6 +224,58 @@ def replace(workflow_name, commit, test_argument, no_test, expire, regex, fix_fu
         logger.info(s)
             
     
+@workflow.command()
+@click.argument("workflow_location")
+@click.option('-n', '--no-test', is_flag=True, default=False)
+@click.option('-a', '--test-argument', multiple=True)
+@click.option('-e', '--email', default=None)
+@click.option('-i', '--input', multiple=True)
+def add(workflow_location, no_test, test_argument, email, input):
+    if email is None:
+        email = "anonymous"
+
+    new_workflow = {
+            'uri': workflow_location.replace("::", "_").replace("https://", "http://"),
+            'location': workflow_location,
+            'submitter_email': email,
+            'extra_rdf':'',
+            'call_type': "http://odahub.io/ontology#python_function",
+            'call_context': "http://odahub.io/ontology#python3",
+        }
+
+    if no_test:
+        logger.warning('skipping test')
+    else:
+        r = run_workflow({
+            "base": new_workflow,
+            "inputs": dict([ a.split("=", 1) for a in test_argument ])
+        },
+            timeout=3600)
+        logger.info(r)
+        if r['status'] != 'success':
+            logger.error('\033[31mPROBLEM\033[0m')
+            return
+        else:
+            logger.error('\033[32mSUCCESS\033[0m')
+
+    extra_rdf = ''
+    for inp in input:
+        extra_rdf += f'<{new_workflow["uri"]}> oda:expects {inp} . \n'
+
+    print(f"extra_rdf: \033[33m{extra_rdf}\033[0m")
+
+    print(json.dumps(new_workflow, indent=4, sort_keys=True))
+
+    r = requests.get(url+"/tests/add",
+                    params={
+                        'uri': new_workflow['uri'],
+                        'location': new_workflow['location'],
+                        'submitter_email': new_workflow['submitter_email'],
+                        # 'extra_rdf':extra_rdf,
+                    })
+
+    print(r.text)
+    print(json.dumps(r.json(), indent=4, sort_keys=True))
 
 
 if __name__ == "__main__":

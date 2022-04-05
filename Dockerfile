@@ -22,4 +22,6 @@ ENV MPLCONFIGDIR=/tmp
 RUN adduser oda
 USER oda
 
+WORKDIR /tmp
+
 ENTRYPOINT gunicorn odaexperiments.app:app -b 0.0.0.0:8000 -w 8 --log-level DEBUG --timeout 600
