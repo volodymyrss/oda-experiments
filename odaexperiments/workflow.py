@@ -235,7 +235,7 @@ def add(workflow_location, no_test, test_argument, email, input):
         email = "anonymous"
 
     new_workflow = {
-            'uri': workflow_location.replace("::", "_").replace("https://", "http://"),
+            'uri': workflow_location.replace("::", "#").replace("https://", "http://"),
             'location': workflow_location,
             'submitter_email': email,
             'extra_rdf':'',
@@ -271,7 +271,7 @@ def add(workflow_location, no_test, test_argument, email, input):
                         'uri': new_workflow['uri'],
                         'location': new_workflow['location'],
                         'submitter_email': new_workflow['submitter_email'],
-                        # 'extra_rdf':extra_rdf,
+                        'extra_rdf':extra_rdf,
                     })
 
     print(r.text)
