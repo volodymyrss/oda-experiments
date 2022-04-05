@@ -24,3 +24,5 @@ astroquery
 prettytable
 
 logging_tree
+
+werkzeug~=2.0.0
