@@ -13,9 +13,12 @@ Flask-JWT
 
 jsonschema<4.0
 
+igwn-auth-utils[requests]==0.2.2
 pylogstash_context==0.1.12
 
 simpler-ansi2html
+
+requests
 
 oda-api[gw]>=1.1.30
 

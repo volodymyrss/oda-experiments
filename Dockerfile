@@ -24,4 +24,6 @@ USER oda
 
 WORKDIR /tmp
 
+RUN python -c 'from gwpy.timeseries.timeseries import TimeSeries'
+
 ENTRYPOINT gunicorn odaexperiments.app:app -b 0.0.0.0:8000 -w 8 --log-level DEBUG --timeout 600
