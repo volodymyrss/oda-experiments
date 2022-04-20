@@ -30,7 +30,7 @@ import subprocess
 
 import functools
 
-from flask_jwt import JWT, jwt_required, current_identity # type: ignore
+import flask_jwt # type: ignore
 from werkzeug.security import safe_str_cmp
 
 from urllib.parse import urlencode, quote_plus
@@ -138,7 +138,9 @@ def create_app():
     app.config['SECRET_KEY'] = os.environ.get("ODATESTS_SECRET_KEY")
     app.config["APPLICATION_ROOT"] = os.environ.get("APPLICATION_ROOT", "/")
 
-    jwt = JWT(app, authenticate, identity)
+    print(flask_jwt.__file__, flask_jwt.JWT)
+
+    jwt = flask_jwt.JWT(app, authenticate, identity)
     return app
 
 app = create_app()
@@ -788,7 +790,7 @@ def log_request():
 
     logger.info(request_summary)
 
-    log_stasher.log(request_summary)
+    # log_stasher.log(request_summary)
 
 @app.route('/data')
 def viewdata():

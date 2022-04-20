@@ -154,10 +154,10 @@ def test_run(client):
         )
     )
 
-    assert r['result']['func_return'] == 'https://www.astro.unige.ch/mmoda/dispatch-data'
+    assert r['result']['func_return'] == 'https://www.astro.unige.ch/mmoda'
 
 def test_run_test_func():
     import odaexperiments.run as odarun
     f = odarun.test_func("odaplatform", "platform_endpoint")
-    assert f(cdciplatform="production") == 'https://www.astro.unige.ch/mmoda/dispatch-data'
+    assert f(cdciplatform="production") == 'https://www.astro.unige.ch/mmoda'
 
