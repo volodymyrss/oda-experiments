@@ -7,3 +7,4 @@ dist
 *.egg-info
 secret-key.txt
 problematic-rdf.ttl
+.tox
