@@ -1,6 +1,8 @@
 from flask import url_for
 import pytest
 
+# pytestmark = [pytest.mark.service]
+
 def test_status(client):
     r = client.get("/status")
     print(r, r.json)
@@ -14,7 +16,9 @@ def test_get(client):
     print(r, r.json)
 
 def test_get_f(client):
-    r = client.get(url_for("tests_get", f="?workflow oda:domain oda:common"))
+    # r = client.get(url_for("tests_get", f="?workflow oda:domain oda:common"))
+    r = client.get(url_for("tests_get", f="?workflow oda:belongsTo oda:basic_testkit"))
+    
     print(r, r.json)
     assert len(r.json)>0
 
@@ -90,9 +94,9 @@ def test_view_testresults(client):
     r = client.get(url_for("viewdata"))
     print(r.json)
 
-def test_put(client):
-    r = client.put(url_for("tests_put", uri="oda:test-test", location="known"))
-    print(r.json)
+# def test_put(client):
+#     r = client.put(url_for("tests_put", uri="oda:test-test", location="known"))
+#     print(r.json)
 
 def test_get_testresults(client):
     pass
@@ -154,7 +158,7 @@ def test_run(client):
         )
     )
 
-    assert r['result']['func_return'] == 'https://www.astro.unige.ch/mmoda'
+    assert r['result']['func_return'] == 'https://www.astro.unige.ch/mmoda/dispatch-data'
 
 def test_run_test_func():
     import odaexperiments.run as odarun

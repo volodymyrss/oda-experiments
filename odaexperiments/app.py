@@ -5,8 +5,8 @@ import pprint
 import click
 import copy
 import re
-
-from odaexperiments.workflow import validate_workflow, w2uri
+from .compose import get_workflows
+from .workflow import validate_workflow, w2uri
 
 import requests
 
@@ -26,8 +26,17 @@ try:
 except:
     pass
 
-import subprocess
+import sys
 
+if sys.version_info < (3, 9):
+    # importlib.resources either doesn't exist or lacks the files()
+    # function, so use the PyPI version:
+    import importlib_resources
+else:
+    # importlib.resources has files(), so use that:
+    import importlib.resources as importlib_resources
+
+    
 import functools
 
 import flask_jwt # type: ignore
@@ -223,7 +232,10 @@ def coming_soon():
 @app.route('/add-test', methods=["GET"])
 def add_test_form():
     log_request()
-    return render_template("add-form.html",
+
+    pkg = importlib_resources.files("*")
+
+    return render_template(pkg / "templates/add-form.html",
                 uri=request.args.get('uri'),
                 location=request.args.get('location'),
             )
@@ -272,50 +284,8 @@ def expire_uri():
 
 
 def get_tests(f=None):
-    tests=[]
-
-    for t in odakb.sparql.select(query="""
-                        ?workflow oda:belongsTo oda:basic_testkit; 
-                              a oda:test;
-                              a oda:workflow;
-                              oda:callType ?call_type;
-                              oda:callContext ?call_context;
-                              oda:location ?location .
-                              
-                        OPTIONAL { ?workflow dc:contributor ?email }
-
-                        NOT EXISTS { ?workflow oda:realm oda:expired }
-
-                    """ + (f or ""),
-                    limit=10000,
-                    ):
-        logger.info("selected workflow entry: %s", t)
-
-
-        t['domains'] = odakb.sparql.select(query="""
-                        {workflow} oda:domain ?domain
-                        """.format(workflow=nuri(t['workflow'])))
-        
-        t['expects'] = {}
-
-        for r in odakb.sparql.select(query="""
-                        <{workflow}> oda:expects ?expectation .
-                        ?expectation a ?ex_type .
-                        """.format(workflow=t['workflow'])):
-            #if 
-
-            binding = r['expectation'].split("#")[1][len("input_"):]
-
-            t['expects'][binding] = r['ex_type']
-
-        logger.info("created test (have %s already): \n" + pprint.pformat(t), len(tests))
-
-        tests.append(t)
-
-    logger.info("returning %s tests", len(tests))
-
-    return tests
-
+    return get_workflows("\n?workflow oda:belongsTo oda:basic_testkit . \n" + f)
+    
 
 def design_goals(f=None):
     goals = []
@@ -760,7 +730,10 @@ def graph():
         else:
             G = rdflib.Graph().parse(data=odakb.sparql.tuple_list_to_turtle(g), format='turtle')
 
-            jsonld = G.serialize(format='json-ld', indent=4, sort_keys=True).decode()
+            jsonld = G.serialize(format='json-ld', indent=4, sort_keys=True)
+            
+            if isinstance(jsonld, bytes):
+                jsonld = jsonld.decode()
 
             return jsonify(json.loads(jsonld))
     else:
