@@ -36,15 +36,18 @@ def get_workflows(f=None):
 
     workflows_dict = defaultdict(dict)
 
+
     for t in odakb.sparql.select(
                     f"""?workflow a oda:workflow;
                                   oda:callType ?call_type;
                                   oda:callContext ?call_context;
-                                  oda:location ?location;
-                                  oda:expects ?expects;
-                                  oda:domain ?domain .
+                                  oda:location ?location .
 
-                        ?expects a ?expects_type .
+                        OPTIONAL {{ 
+                            ?expects a ?expects_type . 
+                            ?workflow oda:expects ?expects;
+                                      oda:domain ?domain .
+                        }}                        
 
                         {sparql_filter}
                               
@@ -52,7 +55,7 @@ def get_workflows(f=None):
 
                         NOT EXISTS {{ ?workflow oda:realm oda:expired }}
                     """ ,
-                    limit=10000,
+                    limit=1000000,
                 ):  # type: ignore
 
         logger.info("sparql row: %s", pdict(t))

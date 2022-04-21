@@ -15,6 +15,7 @@ import os
 import re
 import shutil
 import time
+from traceback import format_exc, print_stack, format_stack
 import click
 
 import logging
@@ -88,7 +89,7 @@ def _list(all, long):
         T.add_row([
                 i,
                 w['workflow'] if long else w['workflow'].split("#")[1],
-                "\n".join(list(w['expects'].keys())),
+                "\n".join([f"{k} ({v})" for k, v in w.get('expects', {}).items()]),
                 "\n".join(w['location']) if isinstance(w['location'], list) else w['location']
             ])
 
@@ -124,7 +125,7 @@ def run(workflow_name, input, regex, short_name, all):
 
             for i in input:
                 i_k, i_v = i.split("=", 1)
-                if len(i_v.split(":")) > 0:
+                if ":" in i_v:
                     i_v, i_t = i_v.split(":")
                 else:
                     i_t = 'str'
@@ -147,7 +148,7 @@ def run(workflow_name, input, regex, short_name, all):
                 continue
             
         except Exception as e:
-            logger.error("exception running workflow %s: %s", workflow, e)
+            logger.error("exception running workflow %s: %s; %s", workflow, e, format_exc())
             summary.append({'workflow': workflow['workflow'], 'event': 'failed'})        
 
     for s in summary:
