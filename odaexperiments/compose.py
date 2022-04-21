@@ -1,11 +1,11 @@
 
 # here fetch workflows, options, compose and sort them
 
+# construct workflows from publications by generalizing object
+
 # sort by ML based scores and by other means. explain with graphs
 
 # fetch workflows that output rdf. any workflow outputs rdf. gather it's execution
-
-# construct workflows from publications by generalizing object
 
 
 # use osa verification workflows
@@ -16,13 +16,36 @@
 
 # refer to knowledge resolutions
 
+from collections import defaultdict
+import json
 import logging
 import pprint
+import time
 import odakb.sparql
 from odakb.sparql import nuri
 
 logger = logging.getLogger(__name__)
 
+def pdict(d):
+    return json.dumps(d, indent=4, sort_keys=True)
+
+def timeit(f):
+    def print_time(t0):
+        logger.getChild("timeit").debug("spent %s in %s", time.time() - t0, f.__name__)
+
+    def _f(*args, **kwargs):
+        t0 = time.time()
+        try:
+            R = f(*args, **kwargs)            
+            print_time(t0)
+            return R
+        except Exception as e:
+            print_time(t0)
+            raise
+
+    return _f
+
+@timeit
 def get_workflows(f=None):
     tests=[]
 
@@ -30,12 +53,17 @@ def get_workflows(f=None):
     if f is not None:
         sparql_filter = f
 
+    workflows_dict = {}
 
     for t in odakb.sparql.select(
                     f"""?workflow a oda:workflow;
                                   oda:callType ?call_type;
                                   oda:callContext ?call_context;
-                                  oda:location ?location .
+                                  oda:location ?location;
+                                  oda:expects ?expects;
+                                  oda:domain ?domain .
+
+                        ?expects a ?ex_type .
 
                         {sparql_filter}
                               
@@ -46,29 +74,24 @@ def get_workflows(f=None):
                     limit=10000,
                 ):  # type: ignore
 
-        logger.info("selected workflow entry: %s", t)
+        logger.info("sparql row: %s", pdict(t))
 
+        workflow = {}
+        workflows_dict[t['workflow']] = workflow
 
-        t['domains'] = odakb.sparql.select(query="""
-                        {workflow} oda:domain ?domain
-                        """.format(workflow=nuri(t['workflow'])))
+        for p, v in t.items():            
+            if p not in workflow:
+                workflow[p] = v
+            else:
+                if not isinstance(workflow[p], list):
+                    workflow[p] = [workflow[p]]
+                workflow[p].append(v)
+
+    workflows = [{'workflow': k, **v} for k, v in workflows_dict.items()]
         
-        t['expects'] = {}
-
-        for r in odakb.sparql.select(query="""
-                        <{workflow}> oda:expects ?expectation .
-                        ?expectation a ?ex_type .
-                        """.format(workflow=t['workflow'])):  # type: ignore
-            #if 
-
-            binding = r['expectation'].split("#")[1][len("input_"):]
-
-            t['expects'][binding] = r['ex_type']
-
-        logger.info("created test (have %s already): \n" + pprint.pformat(t), len(tests))
-
-        tests.append(t)
-
-    logger.info("returning %s workflows", len(tests))
+    logger.info("returning %s workflows", len(workflows))
 
     return tests
+
+def workflows_from_papers():
+    pass
