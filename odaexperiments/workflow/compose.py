@@ -6,13 +6,16 @@
 # sort by ML based scores and by other means. explain with graphs
 
 # fetch workflows that output rdf. any workflow outputs rdf. gather it's execution
-
+# fetch and run reasoning workflows here
 
 # use osa verification workflows
 # use transient workflows
 # use deduced world workflows
 # use osa self-test workflows
 
+# contextualize and decontextualize
+
+# cast parameters
 
 # refer to knowledge resolutions
 

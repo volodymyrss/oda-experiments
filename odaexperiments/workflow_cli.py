@@ -8,6 +8,7 @@
 # another equivalent example of function ontology is this one https://fno.io/ontology/
 
 
+import builtins
 import copy
 from email.policy import default
 import re
@@ -18,6 +19,7 @@ import logging
 import hashlib
 
 from .run import run as run_workflow
+from .aux import get_dict
 
 import json
 
@@ -36,16 +38,6 @@ logger=logging.getLogger("odaworker.workflow")
 def cli():
     pass
 
-def w2uri(w, prefix="data"):
-    validate_workflow(w)
-    return "data:"+prefix+"-"+hashlib.sha256(json.dumps(w, sort_keys=True).encode()).hexdigest()[:16]
-
-
-@click.group()
-def workflow():
-    pass
-
-
 def list_workflows():
     logger.info("requesting workflows")
     t0 = time.time()
@@ -55,11 +47,14 @@ def list_workflows():
     return r
 
 
-def dict_workflows():
-    return {w['workflow'].split("#")[1]:w for w in list_workflows()}
+def dict_workflows(short_name):
+    if short_name:
+        return {w['workflow'].split("#")[1]:w for w in list_workflows()}
+    else:
+        return {w['workflow']:w for w in list_workflows()}        
     
 
-@workflow.command("list")
+@cli.command("list")
 def _list():
     rdf_init()        
 
@@ -79,15 +74,16 @@ def _list():
     print(T)
 
 
-@workflow.command()
+@cli.command()
 @click.argument("workflow_name")
+@click.option('-s', '--short-name', is_flag=True, default=False)
 @click.option('-R', '--regex', is_flag=True, default=False)
-@click.option('-a', '--argument', multiple=True)
-def run(workflow_name, argument, regex):
+@click.option('-i', '--input', multiple=True)
+def run(workflow_name, input, regex, short_name):
     if regex:
-        workflows = [v for k, v in dict_workflows().items() if re.match(workflow_name, k)]
-    else:
-        workflows = [dict_workflows()[workflow_name]]
+        workflows = [v for k, v in dict_workflows(short_name).items() if re.match(workflow_name, k)]
+    else:        
+        workflows = [get_dict(dict_workflows(short_name), workflow_name)]
 
     summary = []
 
@@ -96,9 +92,22 @@ def run(workflow_name, argument, regex):
         logger.debug(json.dumps(workflow, indent=4, sort_keys=True))
 
         try:
+            inputs = {}
+
+            for i in input:
+                i_k, i_v = i.split("=", 1)
+                if len(i_v.split(":")) > 0:
+                    i_v, i_t = i_v.split(":")
+                else:
+                    i_t = 'str'
+
+                i_t = getattr(builtins, i_t) 
+
+                inputs[i_k] = i_t(i_v)
+
             r = run_workflow({
                 "base": workflow,
-                "inputs": dict([ a.split("=", 1) for a in argument ])
+                "inputs": inputs
             })
 
             logger.info(r)
@@ -117,7 +126,7 @@ def run(workflow_name, argument, regex):
         logger.info(s)
 
 
-@workflow.command()
+@cli.command()
 @click.argument("workflow_name")
 # @click.argument("workflow_name")
 # @click.option('-a', '--argument', multiple=True)
@@ -131,9 +140,9 @@ def run(workflow_name, argument, regex):
 def replace(workflow_name, commit, test_argument, no_test, expire, regex, fix_function, fix_file): #, new_name):
     
     if regex:
-        workflows = [v for k, v in dict_workflows().items() if re.match(workflow_name, k)]
+        workflows = [v for k, v in dict_workflows(short_name=False).items() if re.match(workflow_name, k)]
     else:
-        workflows = [dict_workflows()[workflow_name]]
+        workflows = [dict_workflows(short_name=False)[workflow_name]]
 
     summary = []
 
@@ -218,7 +227,7 @@ def replace(workflow_name, commit, test_argument, no_test, expire, regex, fix_fu
         logger.info(s)
             
     
-@workflow.command()
+@cli.command()
 @click.argument("workflow_location")
 @click.option('-n', '--no-test', is_flag=True, default=False)
 @click.option('-a', '--test-argument', multiple=True)

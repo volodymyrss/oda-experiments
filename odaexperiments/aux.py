@@ -3,6 +3,9 @@ import json
 import logging
 import time
 
+from difflib import SequenceMatcher
+
+
 logger = logging.getLogger(__name__)
 
 def pdict(d):
@@ -23,3 +26,20 @@ def timeit(f):
             raise
 
     return _f
+
+
+class KeyErrorSuggestions(KeyError):
+    def __init__(self, key, avail_keys) -> None:
+        self.key = key
+        self.avail_keys = avail_keys
+
+    def __str__(self) -> str:
+        return f"KeyError: {self.key}\n" + \
+               f"available: \n{pdict(list(sorted(self.avail_keys, key=lambda x:-SequenceMatcher(None, self.key, x).ratio())))}"
+
+def get_dict(D, k):
+    try:
+        return D[k]
+    except KeyError:
+        raise KeyErrorSuggestions(k, D.keys())
+        

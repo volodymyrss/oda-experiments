@@ -5,7 +5,7 @@ import jsonschema
 workflow_schema = {
     "$id": "http://odahub.io/ontology#workflow-schema",
     "properties": {
-        "test": {
+        "workflow": {
             "required": ["call_type", "call_context", "workflow"]
         }
     },

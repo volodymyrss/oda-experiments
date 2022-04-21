@@ -8,11 +8,17 @@ from queue import Queue, Empty
 import os
 import re
 
+import logging
+
+from .aux import pdict
+
+logger = logging.getLogger(__name__)
+
 class UnsupportedCallType(Exception):
     pass
 
 def run(w, timeout=600):
-    print("run this", w)
+    logger.info("requested to run %s", pdict(w))
 
     if w['base']['call_type'] == "http://odahub.io/ontology#python_function" \
         and w['base']['call_context'] == "http://odahub.io/ontology#python3":
@@ -28,7 +34,7 @@ def run_python_function(w, timeout=600):
         # raise UnsupportedCallType("can not split", w['base']['location'], e)
         return dict(result=f"can not split {w['base']['location']} {e}", status="unsupported")
 
-    pars = ",".join(["%s=\"%s\""%(k,v) for k,v in w['inputs'].items()])
+    pars = ",".join(["%s=%s"%(k,repr(v)) for k,v in w['inputs'].items()])
 
     time_constrain = None
 
@@ -45,8 +51,7 @@ def run_python_function(w, timeout=600):
 
             return dict(result=result, status=status)
     
-    #if re.match("https://raw.githubusercontent.com/volodymyrss/oda_test_kit/+[0-9a-z]+?/test_[a-z0-9]+?.py", url):
-    if re.match("https://raw.githubusercontent.com/volodymyrss/oda_test_kit/+[0-9a-z]+?/[a-z0-9_]+?.py", url):
+    if re.match("https://raw.githubusercontent.com/volodymyrss/[0-9a-z_\-]+?/+[0-9a-z]+?/[a-z0-9_]+?.py", url):
         print("found valid url", url)
     else:
         raise UnsupportedCallType("invalid url: %s!"%url)
@@ -83,7 +88,11 @@ def run_python_function(w, timeout=600):
         raise Exception("all urls failed!")
 
     c = r.text
-    c += "\n\nresult=%s(%s)"%(func, pars)
+
+    if func == "__main__":
+        c += "\n\nresult = None"
+    else:
+        c += "\n\nresult = %s(%s)"%(func, pars)
     c += "\n\nimport json"
     c += "\n\nprint('RESULT:', json.dumps(result))"
 
@@ -132,7 +141,7 @@ def run_python_function(w, timeout=600):
         else: # got line
             print("> ", l.decode().strip())
             stdout += l.decode()
-        time.sleep(0.01)
+        # time.sleep(0.01) # TODO: why I needed this?
 
     
     print("exited as ", p.returncode)

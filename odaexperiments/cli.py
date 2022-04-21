@@ -1,6 +1,6 @@
 import logging
 import click
-from .workflow import workflow
+from .workflow_cli import cli as workflow_cli
 from .worker import worker
 
 logger = logging.getLogger("odaexperiments")
@@ -18,8 +18,8 @@ def cli(debug):
     
     logging.getLogger().setLevel(log_level)
     
-cli.add_command(workflow)
-cli.add_command(worker)
+cli.add_command(workflow_cli, "workflow")
+cli.add_command(worker, "worker")
 
 if __name__ == "__main__":
     cli()

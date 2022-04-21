@@ -885,7 +885,9 @@ def evaluate(w: Union[str, dict], allow_run=True):
         return 'restored', r
     else:
         if allow_run:
-            r = { 'origin':"run", **odarun.run(w) }
+            ##
+            r = {'origin':"run", **odarun.run(w)}
+            ##
 
             s = store(w, r)
         
