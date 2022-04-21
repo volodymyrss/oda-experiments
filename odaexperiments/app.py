@@ -5,8 +5,8 @@ import pprint
 import click
 import copy
 import re
-from .compose import get_workflows
-from .workflow import validate_workflow, w2uri
+from .workflow.compose import get_workflows
+from .workflow.schema import validate_workflow, w2uri
 
 import requests
 

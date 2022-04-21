@@ -5,6 +5,7 @@
 
 # fetch workflows that output rdf. any workflow outputs rdf. gather it's execution
 
+# another equivalent example of function ontology is this one https://fno.io/ontology/
 
 
 import copy
@@ -34,22 +35,6 @@ logger=logging.getLogger("odaworker.workflow")
 @click.group()
 def cli():
     pass
-
-workflow_schema = {
-    "$id": "http://odahub.io/ontology#workflow-schema",
-    "properties": {
-        "test": {
-            "required": ["call_type", "call_context", "workflow"]
-        }
-    },
-    "required": ["base", "inputs"]
-}
-
-# workflow_schema = json.loads(open("workflow-schema.json").read())
-
-def validate_workflow(w):
-    jsonschema.validate(w, workflow_schema)
-
 
 def w2uri(w, prefix="data"):
     validate_workflow(w)

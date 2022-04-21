@@ -17,43 +17,21 @@
 # refer to knowledge resolutions
 
 from collections import defaultdict
-import json
 import logging
-import pprint
-import time
 import odakb.sparql
-from odakb.sparql import nuri
+
+from ..aux import timeit, pdict
 
 logger = logging.getLogger(__name__)
 
-def pdict(d):
-    return json.dumps(d, indent=4, sort_keys=True)
-
-def timeit(f):
-    def print_time(t0):
-        logger.getChild("timeit").debug("spent %s in %s", time.time() - t0, f.__name__)
-
-    def _f(*args, **kwargs):
-        t0 = time.time()
-        try:
-            R = f(*args, **kwargs)            
-            print_time(t0)
-            return R
-        except Exception as e:
-            print_time(t0)
-            raise
-
-    return _f
 
 @timeit
 def get_workflows(f=None):
-    tests=[]
-
     sparql_filter = ""
     if f is not None:
         sparql_filter = f
 
-    workflows_dict = {}
+    workflows_dict = defaultdict(dict)
 
     for t in odakb.sparql.select(
                     f"""?workflow a oda:workflow;
@@ -75,23 +53,23 @@ def get_workflows(f=None):
                 ):  # type: ignore
 
         logger.info("sparql row: %s", pdict(t))
-
-        workflow = {}
-        workflows_dict[t['workflow']] = workflow
+                
+        workflow = workflows_dict[t['workflow']]
 
         for p, v in t.items():            
-            if p not in workflow:
-                workflow[p] = v
+            if p in ['expects', 'location', 'domain']: # find type from ontology
+                S = set(workflow.get(p, []))
+                S.add(v)
+                workflow[p] = list(S)
             else:
-                if not isinstance(workflow[p], list):
-                    workflow[p] = [workflow[p]]
-                workflow[p].append(v)
+                workflow[p] = v
+                
 
     workflows = [{'workflow': k, **v} for k, v in workflows_dict.items()]
         
     logger.info("returning %s workflows", len(workflows))
 
-    return tests
+    return workflows
 
 def workflows_from_papers():
     pass
