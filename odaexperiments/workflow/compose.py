@@ -19,6 +19,8 @@
 
 # refer to knowledge resolutions
 
+# count citations, including references
+
 from collections import defaultdict
 import logging
 import odakb.sparql
