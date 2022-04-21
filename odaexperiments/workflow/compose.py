@@ -66,6 +66,8 @@ def get_workflows(f=None):
             if p == 'expects':
                 workflow['expects'] = workflow.get('expects', {})
                 workflow['expects'][v.split("#")[-1]] = t['expects_type']                
+            elif p == 'expects_type':                
+                continue
             elif p in ['location', 'domain']: # find type from ontology
                 S = set(workflow.get(p, []))
                 S.add(v)

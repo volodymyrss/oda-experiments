@@ -80,7 +80,7 @@ def _list(all, long):
         r = list_workflows()
     
     T = PrettyTable()    
-    T.field_names = ["#", "name", "inputs", "location"]
+    T.field_names = ["#", "name", "domains", "inputs", "location"]
     T.max_width = shutil.get_terminal_size().columns
     T.align = "l"
     T.hrules = prettytable.ALL
@@ -89,6 +89,7 @@ def _list(all, long):
         T.add_row([
                 i,
                 w['workflow'] if long else w['workflow'].split("#")[1],
+                "\n".join([d.split("#")[-1] for d in w.get('domain', [])]),
                 "\n".join([f"{k} ({v})" for k, v in w.get('expects', {}).items()]),
                 "\n".join(w['location']) if isinstance(w['location'], list) else w['location']
             ])
