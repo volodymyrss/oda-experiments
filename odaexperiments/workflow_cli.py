@@ -11,12 +11,18 @@
 import builtins
 import copy
 from email.policy import default
+import os
 import re
+import shutil
 import time
 import click
 
 import logging
 import hashlib
+
+import prettytable
+
+from odaexperiments.workflow.compose import get_workflows
 
 from .run import run as run_workflow
 from .aux import get_dict
@@ -47,28 +53,43 @@ def list_workflows():
     return r
 
 
-def dict_workflows(short_name):
+def list_workflows_noservice():
+    logger.info("requesting workflows")
+    r = get_workflows()
+    logger.debug(json.dumps(r, indent=4, sort_keys=True))
+    return r
+
+
+def dict_workflows(short_name, lister=list_workflows):
     if short_name:
-        return {w['workflow'].split("#")[1]:w for w in list_workflows()}
+        return {w['workflow'].split("#")[1]:w for w in lister()}
     else:
-        return {w['workflow']:w for w in list_workflows()}        
+        return {w['workflow']:w for w in lister()}        
     
 
 @cli.command("list")
-def _list():
+@click.option("-a", "--all", is_flag=True)
+@click.option("-l", "--long", is_flag=True)
+def _list(all, long):
     rdf_init()        
 
-    r = list_workflows()
+    if all:
+        r = list_workflows_noservice()
+    else:
+        r = list_workflows()
     
-    T = PrettyTable()
-    T.field_names = ["name", "inputs", "location"]
+    T = PrettyTable()    
+    T.field_names = ["#", "name", "inputs", "location"]
+    T.max_width = shutil.get_terminal_size().columns
     T.align = "l"
+    T.hrules = prettytable.ALL
 
-    for w in r:
+    for i, w in enumerate(r):
         T.add_row([
-                w['workflow'].split("#")[1],
-                list(w['expects'].keys()),
-                w['location']
+                i,
+                w['workflow'] if long else w['workflow'].split("#")[1],
+                "\n".join(list(w['expects'].keys())),
+                "\n".join(w['location']) if isinstance(w['location'], list) else w['location']
             ])
 
     print(T)
@@ -79,11 +100,18 @@ def _list():
 @click.option('-s', '--short-name', is_flag=True, default=False)
 @click.option('-R', '--regex', is_flag=True, default=False)
 @click.option('-i', '--input', multiple=True)
-def run(workflow_name, input, regex, short_name):
+@click.option('-a', '--all', is_flag=True)
+def run(workflow_name, input, regex, short_name, all):
+    if all:
+        lister = list_workflows_noservice
+    else:
+        lister = list_workflows
+    
+
     if regex:
-        workflows = [v for k, v in dict_workflows(short_name).items() if re.match(workflow_name, k)]
+        workflows = [v for k, v in dict_workflows(short_name, lister=lister).items() if re.match(workflow_name, k)]
     else:        
-        workflows = [get_dict(dict_workflows(short_name), workflow_name)]
+        workflows = [get_dict(dict_workflows(short_name, lister=lister), workflow_name)]
 
     summary = []
 

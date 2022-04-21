@@ -44,7 +44,7 @@ def get_workflows(f=None):
                                   oda:expects ?expects;
                                   oda:domain ?domain .
 
-                        ?expects a ?ex_type .
+                        ?expects a ?expects_type .
 
                         {sparql_filter}
                               
@@ -60,7 +60,10 @@ def get_workflows(f=None):
         workflow = workflows_dict[t['workflow']]
 
         for p, v in t.items():            
-            if p in ['expects', 'location', 'domain']: # find type from ontology
+            if p == 'expects':
+                workflow['expects'] = workflow.get('expects', {})
+                workflow['expects'][v.split("#")[-1]] = t['expects_type']                
+            elif p in ['location', 'domain']: # find type from ontology
                 S = set(workflow.get(p, []))
                 S.add(v)
                 workflow[p] = list(S)
